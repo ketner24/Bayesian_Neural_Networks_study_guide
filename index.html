@@ -216,6 +216,28 @@ details.acc .accbody{padding:2px 20px 18px}
   .scrim.show{display:block}
 }
 @media (prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important}}
+
+/* ===== tutor-companion boxes ===== */
+:root{--intuit:#3B41C4; --intuit-bg:#EEEFFB; --worked-c:#1F9D6B; --worked-bg:#E5F4EE; --watch-c:#C9791F; --watch-bg:#FBF0E2; --bnn-c:#8A46C9; --bnn-bg:#F3EBFB}
+html[data-theme="dark"]{--intuit:#8A90FF; --intuit-bg:#1C2138; --worked-c:#3FC38C; --worked-bg:#12291F; --watch-c:#E0A24E; --watch-bg:#2A2113; --bnn-c:#BE8AF0; --bnn-bg:#221735}
+.tbox{border-radius:var(--radius-sm); padding:14px 18px 15px; margin:15px 0; border:1px solid var(--line); font-size:14.5px; line-height:1.6}
+.tbox p:last-child{margin-bottom:0}
+.tbox .tlab{font-family:'IBM Plex Mono'; font-size:10.5px; letter-spacing:.11em; text-transform:uppercase; font-weight:700; margin-bottom:8px; display:flex; align-items:center; gap:8px}
+.tbox .tlab .g{font-size:13px; line-height:1}
+.tbox.intuition{background:var(--intuit-bg); border-color:color-mix(in srgb,var(--intuit) 26%,var(--line))}
+.tbox.intuition .tlab{color:var(--intuit)}
+.tbox.worked{background:var(--worked-bg); border-color:color-mix(in srgb,var(--worked-c) 26%,var(--line))}
+.tbox.worked .tlab{color:var(--worked-c)}
+.tbox.watch{background:var(--watch-bg); border-color:color-mix(in srgb,var(--watch-c) 30%,var(--line))}
+.tbox.watch .tlab{color:var(--watch-c)}
+.tbox.bnn{background:var(--bnn-bg); border-color:color-mix(in srgb,var(--bnn-c) 28%,var(--line))}
+.tbox.bnn .tlab{color:var(--bnn-c)}
+.modnav-sub{font-size:12.5px; color:var(--ink-faint); margin:-4px 0 16px; font-family:'IBM Plex Mono'}
+.keyidea{border-left:3px solid var(--accent); background:var(--accent-soft); padding:12px 18px; border-radius:0 var(--radius-sm) var(--radius-sm) 0; margin:16px 0}
+.keyidea b{color:var(--accent-deep)}
+.done-toggle{display:flex; align-items:center; gap:12px; margin:26px 0 8px; padding:14px 18px; border:1px dashed var(--line-strong); border-radius:var(--radius-sm); background:var(--surface)}
+.done-toggle input{width:20px;height:20px;accent-color:var(--good);cursor:pointer;flex:none}
+.done-toggle label{font-size:14px; cursor:pointer; font-weight:500}
 </style>
 </head>
 <body>
@@ -403,6 +425,258 @@ argmax Σ log p   =  argmin Σ  −log[ 1/√(2πσ²) · exp(−(yᵢ−f)²/2�
     </section>
 
     <!-- ===== WEEK VIEWS injected by JS ===== -->
+    <!-- ================= MODULE 2 ================= -->
+    <section class="view hidden" data-view="mod-2">
+      <div class="eyebrow">Module 2 · Weeks 3 · tutor companion</div>
+      <h1>Maximum Likelihood &amp; Maximum a Posteriori</h1>
+      <div class="modnav-sub">builds on → Module 1 (probability, logs, gradients) · leads to → Module 3 (Laplace expands the MAP point into a distribution)</div>
+      <p class="lede">Module 1 gave you the tools; this is the first time they build something. MLE finds the single \(\theta\) that makes your data most probable. MAP adds a prior belief about \(\theta\) — and the punchline is that a prior <em>is</em> regularization. Two ideas, one derivation each, and you own the entire point-estimate half of the course.</p>
+
+      <h2>1 · Maximum Likelihood Estimation</h2>
+      <p>MLE poses learning as an optimization over a conditional probability: pick the parameters under which the observed data is most likely.</p>
+      <div class="eq">argmax_θ  P(D | θ)</div>
+      <p>Assume the \(n\) examples are drawn independently and identically (I.I.D.). Independence lets the joint factor into a product; then the log-trick from Module 1 turns that product into a sum, and flipping max→min gives the <b>negative log-likelihood (NLL)</b>:</p>
+      <div class="eq">argmax_θ ∏ᵢ P(xᵢ|θ)  =  argmax_θ Σᵢ log P(xᵢ|θ)  =  argmin_θ Σᵢ −log P(xᵢ|θ)</div>
+      <div class="tbox intuition"><div class="tlab"><span class="g">◆</span>Intuition</div>Every term \(-\log P(x_i\mid\theta)\) is a <em>surprise</em>: small when the model finds \(x_i\) plausible, large when \(x_i\) shocks it. MLE minimizes total surprise across the dataset. The I.I.D. assumption from Module 1 is exactly what let the product appear — and the log is exactly what rescues you from multiplying thousands of sub-one probabilities into underflow.</div>
+
+      <h3>Fitting a Bernoulli and a Gaussian</h3>
+      <p>Both fits are solved the same way: write the NLL, differentiate, set to zero. The Bernoulli (parameter \(\rho=p(x{=}1)\)) gives \(\rho=\frac1n\sum x_i\) — just the fraction of ones. The Gaussian gives \(\mu=\frac1n\sum x_i\) and \(\sigma=\sqrt{\frac1n\sum(x_i-\mu)^2}\).</p>
+      <div class="tbox worked"><div class="tlab"><span class="g">✎</span>Worked example</div>Flip a coin, observe \(\{1,1,0,1,0\}\). MLE: \(\rho=\frac{3}{5}=\mathbf{0.6}\) — the sample mean, nothing more. And a Gaussian fit to \(\{2,4,4,4,5,5,7,9\}\) returns \(\mu=5,\ \sigma=2\) (the same numbers you z-scored with in Module 1 — because z-scoring uses exactly these MLE estimates).</div>
+
+      <h2>2 · Supervised MLE and the density trick</h2>
+      <p>For supervised learning the data are pairs \((x_i,y_i)\) and the model implements \(p(y\mid x,\theta)\). Factoring the joint and dropping the \(\log P(x_i)\) term (constant in \(\theta\)) leaves \(\text{argmax}_\theta \sum_i \log P(y_i\mid x_i,\theta)\).</p>
+      <div class="tbox watch"><div class="tlab"><span class="g">⚠</span>Watch out</div>For regression \(y\) is continuous, so — straight from Module 1's PMF-vs-PDF hinge — \(P(y_i\mid x_i,\theta)=p(y_i\mid x_i,\theta)\,dy\), <em>not</em> the density itself. That stray \(dy\) looks alarming, but \(\log(p\cdot dy)=\log p+\log dy\), and \(\log dy\) is <b>constant in \(\theta\)</b>, so it drops out of the argmin. This is the same "constant disappears" move you'll see the prior's \(dD\) and \(d\theta\) make in the MAP derivation. Recognize it once and it stops being scary.</div>
+
+      <h3>Regression loss becomes MSE</h3>
+      <p>Use a Gaussian predictive distribution centered on the model output \(f(x_i,\theta)\). Expanding \(-\log p\) and discarding constants gives:</p>
+      <div class="eq">argmin_θ Σᵢ log σ + |yᵢ − f(xᵢ,θ)|² / (2σ²)</div>
+      <p>With \(\sigma\) held <b>constant</b>, both \(\log\sigma\) and the \(1/2\sigma^2\) factor are argmin-irrelevant — what remains, divided by \(n\), is exactly <b>MSE</b>. Squared error was a Gaussian likelihood all along.</p>
+      <div class="tbox intuition"><div class="tlab"><span class="g">◆</span>Intuition</div>Fixing \(\sigma\) throws away uncertainty — the model reports a best guess with no error bars. Two upgrades: <b>homoscedastic</b> (learn one shared \(\sigma\)) and <b>heteroscedastic</b> (learn \(\sigma(x_i,\theta)\), a per-input error bar). The moment \(\sigma\) becomes learnable, the network starts reporting confidence. That door is the entire rest of the course.</div>
+
+      <h3>Linear, non-linear, and classification</h3>
+      <p>The mean \(f(x_i,\theta)\) can be linear (\(x_i w^\top+b\)) or a neural net of stacked layers \(g(X_l W_1^\top+B_1)W_2^\top\boxplus B_2\) with a ReLU nonlinearity. For classification the predictive PMF replaces the Gaussian: <b>Bernoulli + sigmoid</b> for binary (the NLL is binary cross-entropy), <b>categorical + softmax</b> for multiclass (the NLL is cross-entropy).</p>
+      <div class="tbox bnn"><div class="tlab"><span class="g">★</span>Why it matters for BNNs</div>Every loss you'll ever minimize in this course is a negative log-likelihood of some output distribution: MSE ↔ Gaussian, cross-entropy ↔ categorical, MAE ↔ Laplace. Once losses are log-likelihoods, Bayes' rule can act on them — which is precisely how MLE becomes MAP becomes the full posterior.</div>
+
+      <h2>3 · Maximum a Posteriori</h2>
+      <p>MLE overfits because it only knows the training data. MAP injects prior belief via Bayes' rule on the parameters. The evidence \(P(D)\) is constant in \(\theta\), so it drops:</p>
+      <div class="eq">argmax_θ P(θ|D) = argmax_θ [ log p(D|θ) + log p(θ) ]  =  argmin_θ [ −log p(D|θ) − log p(θ) ]</div>
+      <div class="tbox intuition"><div class="tlab"><span class="g">◆</span>Intuition</div>MAP is MLE with an opinion. \(-\log p(D\mid\theta)\) is the data pulling \(\theta\) toward whatever fits; \(-\log p(\theta)\) is the prior pulling \(\theta\) toward what you believed beforehand. Training settles at the tug-of-war's equilibrium.</div>
+
+      <h3>Complexity priors = regularization</h3>
+      <p>The two workhorse priors both prefer "simple" (small) weights. A <b>mean-zero Gaussian prior</b> \(\mathcal N(0,\sigma^2_{\text{prior}}I)\) contributes \(-\log p(\theta)=\sum_k \frac{|\theta_k|^2}{2\sigma^2_{\text{prior}}}+\text{const}\) — that's <b>L2</b>. A <b>mean-zero Laplace prior</b> contributes \(\sum_k \frac{|\theta_k|}{s_{\text{prior}}}\) — that's <b>L1</b>.</p>
+      <div class="tbox worked"><div class="tlab"><span class="g">✎</span>Worked example</div>The L2 coefficient is \(\lambda_{L2}=\frac{1}{2\sigma^2_{\text{prior}}}\). Set \(\sigma_{\text{prior}}=0.5\): \(\lambda=\frac{1}{2(0.25)}=\mathbf{2}\). A tighter prior (smaller \(\sigma\)) → larger \(\lambda\) → stronger pull toward zero. Same story for L1: \(\lambda_{L1}=1/s_{\text{prior}}=1/0.5=\mathbf{2}\).</div>
+      <div class="tbox watch"><div class="tlab"><span class="g">⚠</span>Watch out</div>L1 (Laplace) drives weights to be <em>exactly</em> zero → sparsity; L2 (Gaussian) drives them <em>close</em> to zero but rarely exactly → shrinkage. The mechanism is the exponent: Laplace's \(|\theta|\) has a non-zero-derivative kink at 0 that "sticks" weights there; Gaussian's \(\theta^2\) flattens out at 0 and never quite pins them. This is the MSE-vs-MAE contrast from Module 1, now acting on the weights instead of the errors.</div>
+
+      <h3>Setting the prior variance</h3>
+      <p>Two standard routes: <b>validation</b> (grid-search \(\sigma^2_{\text{prior}}\), keep the value that generalizes best) or <b>Empirical Bayes / maximum marginal likelihood</b> (choose the \(\sigma^2_{\text{prior}}\) that makes the training data most likely, \(\text{argmax}\int p(D\mid\theta)p(\theta\mid\sigma^2_{\text{prior}})d\theta\)).</p>
+      <div class="tbox bnn"><div class="tlab"><span class="g">★</span>Why it matters for BNNs</div>MAP gives a single \(\theta_{\text{MAP}}\) — a point, not a distribution, so it still can't say how sure it is. Module 3 fixes exactly this: it wraps a Gaussian around \(\theta_{\text{MAP}}\) using the loss curvature. So the MAP point you find here is the anchor the entire Laplace approximation is built on.</div>
+
+      <div class="keyidea"><b>Key idea.</b> A loss is a negative log-likelihood; a regularizer is a negative log-prior. MLE minimizes the first, MAP minimizes their sum. Nothing in the back half of the course escapes this frame.</div>
+      <div class="done-toggle"><input type="checkbox" data-track="cmp-2" id="cmp2"><label for="cmp2">I've worked through Module 2</label></div>
+    </section>
+
+    <!-- ================= MODULE 3 ================= -->
+    <section class="view hidden" data-view="mod-3">
+      <div class="eyebrow">Module 3 · Week 4 · tutor companion</div>
+      <h1>The Laplace Approximation</h1>
+      <div class="modnav-sub">builds on → Module 2 (the MAP point) + Module 1 (Hessian, Taylor) · leads to → Module 4 (VI, an alternative posterior)</div>
+      <p class="lede">MAP handed you a single best \(\theta\). This module wraps a Gaussian around it — mean at \(\theta_{\text{MAP}}\), covariance set by the loss curvature — turning a point estimate into your first real posterior. Then it cashes that posterior in: pruning, uncertainty decomposition, continual learning.</p>
+
+      <h2>1 · The approximation</h2>
+      <p>Let \(f(\theta)=p(D\mid\theta)p(\theta)\) so \(\log f(\theta)=\log p(D\mid\theta)+\log p(\theta)\) is the MAP objective. Take a <b>2nd-order Taylor expansion</b> (Module 1!) of \(\log f\) around \(\theta_{\text{MAP}}\):</p>
+      <div class="eq">log f(θ) ≈ log f(θ_MAP) + ∇log f|_{MAP}·(θ−θ_MAP) + ½(θ−θ_MAP) H (θ−θ_MAP)ᵀ</div>
+      <p>The gradient term <b>vanishes</b> because \(\theta_{\text{MAP}}\) is an optimum. Exponentiating what's left is a Gaussian shape, and matching it to the multivariate Gaussian gives the punchline:</p>
+      <div class="eq">p(θ|D) ≈ N( θ_MAP , −H⁻¹ )   where  H = H_{log f}|_{θ_MAP}</div>
+      <div class="tbox intuition"><div class="tlab"><span class="g">◆</span>Intuition</div>This is the payoff line Module 1 promised. At a maximum the log-posterior is a downward bowl; the Hessian measures how <em>sharp</em> the bowl is. A sharp bowl (large curvature) means the data pins that parameter tightly → small variance. A flat bowl means the parameter is barely constrained → large variance. <b>Curvature literally becomes uncertainty.</b></div>
+      <div class="tbox watch"><div class="tlab"><span class="g">⚠</span>Watch out</div>Two sign/validity checks people trip on. (1) The gradient drops <em>only</em> at \(\theta_{\text{MAP}}\) — run the expansion anywhere else and the linear term stays. (2) At a maximum \(H\) is negative-definite, so \(-H\) is positive-definite and \(-H^{-1}\) is a legitimate covariance. If your "covariance" comes out with negative variances, you weren't at a real optimum.</div>
+
+      <h3>Splitting the Hessian</h3>
+      <p>Because \(\log f=\log p(D\mid\theta)+\log p(\theta)\), the Hessian splits: \(H=H_{\log p(D\mid\theta)}+H_{\log p(\theta)}\). For a mean-zero Gaussian prior the prior Hessian is trivial — diagonal, with every entry \(-1/\sigma^2_{\text{prior}}\).</p>
+
+      <h2>2 · Fisher information (approximating the data Hessian)</h2>
+      <p>The data Hessian is expensive, so it's approximated by the <b>Fisher information</b> \(F\). The key identity is that the expected Hessian equals \(-F\):</p>
+      <div class="eq">E_{p(D|θ)}[ H_{log p(D|θ)} ] = −F = −E[ ∇log p(D|θ) ∇log p(D|θ)ᵀ ]</div>
+      <p>In practice you use the <b>empirical Fisher</b> (average of per-example gradient outer-products) and, since a \(K\times K\) matrix is too big for real nets, a <b>diagonal approximation</b> \(\approx -\sum_i[\nabla\log p(D_i\mid\theta)]^2\).</p>
+      <div class="tbox worked"><div class="tlab"><span class="g">✎</span>Worked example</div>One parameter, curvature \(H=-8\). Posterior variance \(=-1/H=-1/(-8)=\mathbf{0.125}\), so \(\sigma\approx0.354\). Double the curvature to \(-16\) and the variance halves to \(0.0625\): a steeper valley ⇒ a more confident weight. That single inverse-Hessian step is the whole method in miniature.</div>
+      <div class="tbox watch"><div class="tlab"><span class="g">⚠</span>Watch out</div>The diagonal approximation throws away every off-diagonal — i.e. all correlations between parameters. It's cheap and usually fine, but it can badly misjudge uncertainty when weights are strongly coupled. Know that you bought speed with an independence assumption.</div>
+
+      <h2>3 · Cashing it in</h2>
+      <h3>Parameter pruning</h3>
+      <p>Each weight now has its own Gaussian. Ask how many standard deviations 0 sits from the mean; if 0 is plausible, the weight can be set to 0 (pruned) with little loss.</p>
+      <div class="tbox worked"><div class="tlab"><span class="g">✎</span>Worked example</div>A weight with \(\theta_{\text{MAP}}=0.15\) and posterior \(\sigma=0.2\): the z-score of zero is \(|0-0.15|/0.2=\mathbf{0.75}\). Under 1 std away — 0 is very plausible — so this weight is a prune candidate. A weight at \(0.15\) with \(\sigma=0.02\) gives z \(=7.5\); keep it.</div>
+
+      <h3>Bayesian model averaging + uncertainty</h3>
+      <p>Predictions integrate over the posterior, \(p(y\mid x,D)=\int p(y\mid x,\theta)p(\theta\mid D)\,d\theta\), approximated by Monte-Carlo sampling weights. Total predictive variance then decomposes exactly as Module 1's law of total variance predicted:</p>
+      <div class="eq">Var[y] = E_{θ}[ Var_{y|θ}[y] ]   +   Var_{θ}[ E_{y|θ}[y] ]
+              └── aleatoric ──┘        └── epistemic ──┘</div>
+      <div class="tbox intuition"><div class="tlab"><span class="g">◆</span>Intuition</div><b>Aleatoric</b> = irreducible noise in the data; more data won't shrink it. <b>Epistemic</b> = uncertainty about the weights themselves; it vanishes in the infinite-data limit as the posterior collapses to a point. The entropy version tells the same story through mutual information \(I(y,\theta\mid x,D)\). This split is <em>the</em> reason to go Bayesian: it tells you whether "I'm unsure" means "the world is noisy" or "I need more data."</div>
+
+      <h3>Calibration &amp; continual learning</h3>
+      <p><b>ECE</b> (expected calibration error) checks that predicted probabilities match empirical frequencies — an 80%-confident prediction should be right 80% of the time. <b>Continual learning</b> falls straight out of Bayes: yesterday's posterior becomes today's prior, \(p(\theta\mid D_2,D_1)\propto p(D_2\mid\theta)p(\theta\mid D_1)\), which with a Gaussian posterior is an L2 pull toward the old weights.</p>
+      <div class="tbox bnn"><div class="tlab"><span class="g">★</span>Why it matters for BNNs</div>Laplace is the first genuinely Bayesian NN technique in the course, and it's <em>post-hoc</em>: train normally to a MAP point, then approximate. Module 4's variational inference is the alternative — learn the posterior <em>during</em> training. Everything after this is a different answer to the same question: how do we represent \(p(\theta\mid D)\) when the exact integral is intractable?</div>
+
+      <div class="keyidea"><b>Key idea.</b> Laplace = MAP point + a Gaussian whose covariance is the inverse curvature. Sharp loss ⇒ confident weight; flat loss ⇒ uncertain weight. It's a 2nd-order Taylor expansion wearing a probability hat.</div>
+      <div class="done-toggle"><input type="checkbox" data-track="cmp-3" id="cmp3"><label for="cmp3">I've worked through Module 3</label></div>
+    </section>
+
+    <!-- ================= MODULE 4 ================= -->
+    <section class="view hidden" data-view="mod-4">
+      <div class="eyebrow">Module 4 · Week 5 · tutor companion</div>
+      <h1>Variational Inference</h1>
+      <div class="modnav-sub">builds on → Module 3 (approximating the posterior) · leads to → Modules 5–7 (richer variational families)</div>
+      <p class="lede">Laplace approximated the posterior <em>after</em> training. Variational inference (VI) learns an approximate posterior \(q_\phi(\theta)\) <em>during</em> training, by making it as close as possible to the true posterior — where "close" is measured by KL divergence, and the whole thing turns into maximizing the ELBo.</p>
+
+      <h2>1 · KL divergence</h2>
+      <p>The KL divergence measures how different two distributions are:</p>
+      <div class="eq">KL[q‖p] = E_q[ log( q(θ)/p(θ) ) ]  ≥ 0,  =0 iff q=p</div>
+      <div class="tbox watch"><div class="tlab"><span class="g">⚠</span>Watch out</div>KL is <b>not symmetric</b>: \(\text{KL}[q\|p]\neq\text{KL}[p\|q]\) — that's why it's a "divergence," not a distance. VI minimizes the <em>reverse</em> KL \(\text{KL}[q\|p(\theta\mid D)]\), which is <b>mode-seeking</b>: \(q\) prefers to lock onto one mode of the posterior and underestimate its spread rather than smear across modes. Also, \(\text{KL}[q\|p]\) is only defined where \(p=0\Rightarrow q=0\) (absolute continuity). (Aside: the source PDF's header misprints the course as "CS 4921" — it's 4323.)</div>
+
+      <h2>2 · The VI loss splits like MAP</h2>
+      <p>Expand \(\text{KL}[q_\phi(\theta)\|p(\theta\mid D)]\) using Bayes' rule and it separates into two familiar pieces:</p>
+      <div class="eq">argmin_φ KL[q‖p(θ|D)]  =  argmin_φ  −E_q[log p(D|θ)]  +  KL[q_φ(θ)‖p(θ)]
+                                     └─ data term ─┘      └─ prior term ─┘</div>
+      <div class="tbox intuition"><div class="tlab"><span class="g">◆</span>Intuition</div>Same shape as MAP: a data term that fits, a prior term that regularizes. The difference is that MAP tunes a single point \(\theta\) while VI tunes the <em>parameters \(\phi\) of a whole distribution</em> \(q\). The data term is usually intractable, so you Monte-Carlo it: sample \(\theta^j\sim q_\phi\), evaluate \(-\log p(D\mid\theta^j)\), average.</div>
+
+      <h3>The ELBo</h3>
+      <p>Rearranging the same algebra gives \(\log p(D)=\text{KL}[q\|p(\theta\mid D)]+\text{ELBo}\). Since KL \(\ge 0\), the ELBo is a <b>lower bound on the evidence</b> — and minimizing the KL is identical to maximizing the ELBo. That's why "maximize the ELBo" is the VI slogan.</p>
+
+      <h2>3 · Mean-field Gaussian VI &amp; the reparameterization trick</h2>
+      <p>The most common \(q\) is a mean-field (diagonal-covariance) Gaussian: learn a \((\mu_i,\sigma_i)\) per weight. To backprop through a random sample, use the <b>reparameterization trick</b>:</p>
+      <div class="eq">θᵢ = μᵢ + σᵢ·εᵢ,   εᵢ ∼ N(0,1)</div>
+      <div class="tbox intuition"><div class="tlab"><span class="g">◆</span>Intuition</div>You can't differentiate through "draw a sample" — randomness has no gradient. The trick moves the randomness into a fixed noise source \(\varepsilon\) and makes \(\theta\) a <em>deterministic, differentiable</em> function of \(\mu,\sigma,\varepsilon\). Now gradients flow into \(\mu\) and \(\sigma\) as usual. This one line is what makes VI trainable by ordinary gradient descent.</div>
+
+      <h3>Taming gradient variance</h3>
+      <p>Sampling few weights and reusing them across all data points makes the ELBo gradient noisy. Two fixes: the <b>local reparameterization trick</b> (sample noise at the layer's <em>output</em> instead of its weights, using \(\mu_y=x\theta^\top,\ \sigma^2_y=x^2(\theta^2)^\top\)) and <b>flipout</b> (per-example random sign flips so each example sees different effective weights in one pass).</p>
+
+      <h3>The Gaussian–Gaussian KL (memorize it)</h3>
+      <p>When both \(q\) and the prior are Gaussian, the prior term has a closed form:</p>
+      <div class="eq">KL[N(μ_q,σ_q)‖N(μ_p,σ_p)] = log(σ_p/σ_q) + (σ_q² + (μ_q−μ_p)²)/(2σ_p²) − ½</div>
+      <div class="tbox worked"><div class="tlab"><span class="g">✎</span>Worked example</div>\(q=\mathcal N(1,1)\), prior \(=\mathcal N(0,1)\): \(\log 1+\frac{1+1}{2}-\frac12=0+1-0.5=\mathbf{0.5}\). Now \(q=\mathcal N(0,2)\), prior \(=\mathcal N(0,1)\): \(\log\frac{1}{2}+\frac{4+0}{2}-\frac12\approx\mathbf{0.807}\) — a wider \(q\) than the prior is also penalized, not just an off-center one.</div>
+      <p>When \(q\) or the prior is too complex for a closed form, fall back to a Monte-Carlo estimate of the KL: \(\frac1m\sum_i \log q_\phi(\theta^i)-\log p(\theta^i)\) with \(\theta^i\sim q_\phi\).</p>
+      <div class="tbox bnn"><div class="tlab"><span class="g">★</span>Why it matters for BNNs</div>VI is the scalable backbone of Bayesian deep learning — it trains a posterior with the same machinery as ordinary SGD. Modules 5–7 are all "what if \(q\) is something richer than a mean-field Gaussian?": dropout (5), still-Gaussian-ish; ensembles and flows (6–7), genuinely multi-modal. The reparameterization trick and the data/prior split carry through all of them.</div>
+
+      <div class="keyidea"><b>Key idea.</b> VI = pick a tractable family \(q_\phi\), then push it toward the true posterior by maximizing the ELBo (= minimizing reverse KL). Reparameterization makes it differentiable; the KL splits into fit + regularize, exactly like MAP.</div>
+      <div class="done-toggle"><input type="checkbox" data-track="cmp-4" id="cmp4"><label for="cmp4">I've worked through Module 4</label></div>
+    </section>
+
+    <!-- ================= MODULE 5 ================= -->
+    <section class="view hidden" data-view="mod-5">
+      <div class="eyebrow">Module 5 · Week 6 · tutor companion</div>
+      <h1>Dropout-based Variational Inference</h1>
+      <div class="modnav-sub">builds on → Module 4 (VI, reparameterization) · leads to → Module 6 (ensembles as another q)</div>
+      <p class="lede">Dropout was invented as a regularizer. It turns out that if you keep it switched on at test time and average many forward passes, it's a cheap approximate posterior. This module makes that link precise — and is honest about where the theory creaks.</p>
+
+      <h2>1 · Dropout, then MC Dropout</h2>
+      <p>Standard dropout multiplies each neuron by a Bernoulli mask during training and uses the <em>expected</em> (scaled) weights at test time. <b>Monte-Carlo Dropout (MCD)</b> keeps sampling masks at test time too, and averages the predictions — that averaging is Bayesian model averaging.</p>
+      <div class="eq">train:  z = x (W ⊡ Mⱼ)ᵀ ⊞ B,   m ∼ Bern(1−p_drop)
+test (MCD):  p(y|x,D) ≈ (1/m) Σⱼ p(y | x, W, B, Mⱼ)</div>
+      <div class="tbox worked"><div class="tlab"><span class="g">✎</span>Worked example</div>Keep-probability \(1-p_{\text{drop}}=0.8\). Standard dropout's test-time expectation scales the weights by \(0.8\): \(E[\text{output}]=0.8\,(Wx)\). "Inverted dropout" instead scales by \(1/0.8=1.25\) <em>during training</em> so test time needs no rescaling at all — the more common implementation.</div>
+      <div class="tbox intuition"><div class="tlab"><span class="g">◆</span>Intuition</div>Each dropout mask is a slightly different sub-network. Sampling masks at test time is sampling from a crude distribution over networks — a poor man's posterior over weights. Average enough of them and you get both a prediction and a spread (uncertainty) essentially for free, on top of a model you may already have trained.</div>
+
+      <h2>2 · MC Dropout as VI — and its cracks</h2>
+      <p>MCD is motivated as VI with a mixture-of-Gaussians variational distribution that, as component variance \(\sigma^2_q\to0\), collapses onto \(w_{:,j}\,\text{Bern}(1-p_{\text{drop}})\) — weights that are either their trained value or zero.</p>
+      <div class="tbox watch"><div class="tlab"><span class="g">⚠</span>Watch out</div>Two genuine theoretical problems the notes are careful to flag. (1) <b>Inconsistency:</b> the data term is computed as if weights are Bernoulli-sampled, while the prior/KL term is computed as if they're a mixture of Gaussians — two different assumptions in one objective. (2) <b>Not learned:</b> the knobs that control uncertainty, \(\sigma_q\) and \(p_{\text{drop}}\), are <em>hyperparameters</em>, not parameters learned from data. So MCD's uncertainty is only as good as your hand-set dropout rate. (The source PDF again misprints "CS 4921".)</div>
+
+      <h3>Concrete &amp; spike-and-slab dropout</h3>
+      <p><b>Concrete dropout</b> fixes problem (2) by replacing the hard Bernoulli with a continuous relaxation, so \(p_{\text{drop}}\) becomes learnable — which means the entropy term \(H(p)\) is no longer constant and must be kept. <b>Spike-and-slab dropout</b> models the variational distribution as a product of independent Bernoullis (the "spike" at 0) and independent Gaussians (the "slab"), so the KL cleanly splits into a Bernoulli-KL plus a Gaussian-KL.</p>
+      <div class="tbox worked"><div class="tlab"><span class="g">✎</span>Worked example</div>The Bernoulli-KL you'll need: \(\text{KL}[\text{Bern}(q)\|\text{Bern}(p)]=q\ln\frac qp+(1-q)\ln\frac{1-q}{1-p}\). For \(q=0.3,p=0.5\): \(0.3\ln0.6+0.7\ln1.4\approx\mathbf{0.082}\) nats. Push \(q\) to \(0.1\): \(\approx\mathbf{0.368}\) nats — the further your dropout rate strays from the prior rate, the larger the penalty.</div>
+      <div class="tbox bnn"><div class="tlab"><span class="g">★</span>Why it matters for BNNs</div>MCD is the cheapest usable BNN — bolt uncertainty onto a standard network with one line and a loop of forward passes. That's why it's everywhere in practice despite the theory's rough edges. Knowing the cracks tells you when to trust it and when to reach for the cleaner VI of Module 4 or the multi-modal methods of Modules 6–7.</div>
+
+      <div class="keyidea"><b>Key idea.</b> Keep dropout on at test time, average, and you have an approximate posterior for nearly free — but its uncertainty is governed by hand-set hyperparameters, and concrete / spike-and-slab dropout exist to make those knobs learnable and the theory consistent.</div>
+      <div class="done-toggle"><input type="checkbox" data-track="cmp-5" id="cmp5"><label for="cmp5">I've worked through Module 5</label></div>
+    </section>
+
+    <!-- ================= MODULE 6 ================= -->
+    <section class="view hidden" data-view="mod-6">
+      <div class="eyebrow">Module 6 · Week 7 · tutor companion</div>
+      <h1>Deep Ensembles</h1>
+      <div class="modnav-sub">builds on → Modules 3–4 (Laplace, Gaussian VI) · pairs with → Module 7 (flows, implicit VI)</div>
+      <p class="lede">A single Gaussian posterior can only describe one bump. Real posteriors often have several good, separated solutions. The blunt-but-effective fix: train several independent models and treat them as samples from the posterior. That's a deep ensemble — and it has a surprisingly clean VI interpretation.</p>
+
+      <h2>1 · Ensembles as variational inference</h2>
+      <p>View the ensemble's variational distribution as \(m\) MAP point estimates. Plugging into the VI objective, the \(\log q_\phi(\theta^j)\) term becomes a constant and drops:</p>
+      <div class="eq">argmin_φ (1/m) Σⱼ [ −log p(D|θⱼ) + log q(θⱼ) − log p(θⱼ) ]
+        =  argmin_φ (1/m) Σⱼ [ −log p(D|θⱼ) − log p(θⱼ) ]   (log q constant)</div>
+      <div class="tbox intuition"><div class="tlab"><span class="g">◆</span>Intuition</div>Each ensemble member independently rolls downhill from its own random initialization and lands in a different valley of the loss surface. Because the valleys are different modes, you capture posterior structure that no single mean-field Gaussian could — mean-field can only ever describe one valley. Ensembles are "multi-modal VI" done by brute force.</div>
+      <div class="tbox watch"><div class="tlab"><span class="g">⚠</span>Watch out</div>The \(\log q\) term is constant <em>only</em> under the assumptions that members get equal weight \(1/m\) and are independently initialized (so they're distinct). If you tied initializations or weighted members unequally, that term would reappear. The "it just drops" convenience is earned by those conditions.</div>
+
+      <h2>2 · Ensembles + Laplace / VI</h2>
+      <p>You can enrich each member. Give each MAP solution a <b>Laplace</b> Gaussian (Module 3) and you get a Gaussian <em>mixture</em> — multiple modes, each locally curved. Or train each member with <b>Gaussian VI</b> (Module 4) and average the resulting Gaussians into a mixture \(Q_\phi(\theta)=\frac1m\sum_j\mathcal N(\mu_j,\Sigma_j)\).</p>
+      <div class="tbox watch"><div class="tlab"><span class="g">⚠</span>Watch out</div>Ensembling \(m\) separately-trained Gaussians is <em>not</em> the same as fitting one mixture-of-Gaussians variational distribution. The sum of each component's KL-to-prior generally \(\neq\) the KL of the mixture to the prior, because \(q_\phi(\theta)\) requires <em>averaging</em> the component densities before taking the log. A true mixture must be trained in parallel (not independently) with an MC or bound-based KL. Convenient ensembling trades that coupling for speed.</div>
+      <div class="tbox bnn"><div class="tlab"><span class="g">★</span>Why it matters for BNNs</div>Deep ensembles are, empirically, one of the strongest uncertainty methods going — often beating fancier single-model VI on calibration and out-of-distribution detection, precisely because they capture multiple modes. The cost is \(m\times\) training and inference. Module 7's normalizing flows chase the same multi-modal expressiveness inside a <em>single</em> trained model.</div>
+
+      <div class="keyidea"><b>Key idea.</b> Train several models from different inits, weight them equally, and you have a cheap multi-modal posterior. Add Laplace or VI per member for a Gaussian mixture — just don't mistake independent ensembling for a jointly-trained mixture.</div>
+      <div class="done-toggle"><input type="checkbox" data-track="cmp-6" id="cmp6"><label for="cmp6">I've worked through Module 6</label></div>
+    </section>
+
+    <!-- ================= MODULE 7 ================= -->
+    <section class="view hidden" data-view="mod-7">
+      <div class="eyebrow">Module 7 · Week 7 · tutor companion</div>
+      <h1>Neural-Network Variational Distributions</h1>
+      <div class="modnav-sub">builds on → Module 4 (VI) · theme → make q an arbitrary neural network</div>
+      <p class="lede">Gaussians and Bernoullis are limited. This module makes the variational distribution itself a neural network — either an <em>invertible</em> one (normalizing flows, where you can compute \(\log q\) exactly) or an <em>arbitrary</em> one (implicit VI, where you only sample and estimate a ratio).</p>
+
+      <h2>1 · Change of variables</h2>
+      <p>The engine is the change-of-variables rule: if \(\theta=f_\phi(\varepsilon)\) is an invertible map and \(\varepsilon\) has a simple density, the density of \(\theta\) is the density of \(\varepsilon\) rescaled by how much \(f\) stretches space.</p>
+      <div class="eq">p(y)|dy| = p(x)|dx|   →   p(y) = p(x) |dx/dy|</div>
+      <div class="tbox worked"><div class="tlab"><span class="g">✎</span>Worked example</div>The notes' clean case: \(y=\sqrt x\Rightarrow x=y^2\Rightarrow dx/dy=2y\), so \(p(y)=p(x)\cdot 2y=2y\,p(y^2)\). The factor \(2y\) is the local stretch: near large \(y\) the map spreads probability out, so the density there is scaled up to conserve total area. Same principle Module 1 used to explain \(P=p\,dx\).</div>
+
+      <h3>Multivariate: the log-det-Jacobian</h3>
+      <p>In many dimensions the stretch factor is the absolute determinant of the Jacobian, giving the flow's log-density:</p>
+      <div class="eq">log q(θ) = log p(ε) + log | det( d f⁻¹_φ(θ) / dθ ) |</div>
+      <p>A network that is invertible <em>and</em> has a tractable Jacobian determinant is a <b>normalizing flow</b> — e.g. real NVP, invertible ResNets, autoregressive flows.</p>
+      <div class="tbox watch"><div class="tlab"><span class="g">⚠</span>Watch out</div>The whole construction needs \(d\varepsilon/d\theta\neq0\), i.e. \(f_\phi\) must be <b>invertible</b>. Stack ordinary (non-invertible) layers and the change-of-variables formula is simply undefined — you can't recover \(\log q(\theta)\). That invertibility constraint is the price of admission and the reason flow architectures look unusual.</div>
+
+      <h2>2 · Implicit VI — when you only have samples</h2>
+      <p>Sometimes you want a variational net that <em>isn't</em> invertible (e.g. \(\varepsilon\) has fewer dimensions than \(\theta\)). Then you can't evaluate \(\log q_\phi(\theta)\) — but you can still sample it. Implicit VI only needs samples, and it works by estimating the log-ratio \(\log\frac{q_\phi(\theta)}{p(\theta)}\).</p>
+
+      <h3>Discriminator-based ratio estimation</h3>
+      <p>Train a discriminator \(D(\theta)\) to tell "sampled from prior" from "sampled from \(q\)." Setting the objective's derivative to zero gives the optimal discriminator, and hence the ratio you wanted:</p>
+      <div class="eq">D*(θ) = p(θ) / ( p(θ) + q_φ(θ) )   ⇒   optimal logit ℓ(θ) = −log( q_φ(θ)/p(θ) )</div>
+      <div class="tbox intuition"><div class="tlab"><span class="g">◆</span>Intuition</div>This is the GAN idea repurposed. A classifier that <em>can't</em> distinguish two distributions is implicitly reporting their density ratio at every point — and that ratio is exactly the \(\log q/p\) term the VI loss needs. So you replace an intractable density evaluation with a learnable classifier. In practice the discriminator and the variational net are trained together.</div>
+
+      <h3>kNN density estimation</h3>
+      <p>An alternative ratio estimator uses \(k\)-nearest-neighbor distances: \(\hat p(\theta)\approx \frac{k}{n\,V_d R_k^d(\theta)}\), where \(R_k\) is the distance to the \(k\)-th nearest sample. Take logs of two such estimates (for \(q\) and \(p\)) and the constants cancel, leaving a usable \(\log\frac{q}{p}\).</p>
+      <div class="tbox bnn"><div class="tlab"><span class="g">★</span>Why it matters for BNNs</div>Flows and implicit VI remove the last big restriction on Bayesian NNs: that the approximate posterior be simple enough to write down. With them, \(q\) can be as expressive as a neural network — capturing skew, multi-modality, and correlations a mean-field Gaussian can't. The cost is architectural constraints (flows) or adversarial training instability (discriminators).</div>
+
+      <div class="keyidea"><b>Key idea.</b> Make \(q\) a network. If it's invertible, change-of-variables gives \(\log q\) exactly (normalizing flows). If not, estimate the \(\log q/p\) ratio from samples via a discriminator or kNN (implicit VI).</div>
+      <div class="done-toggle"><input type="checkbox" data-track="cmp-7" id="cmp7"><label for="cmp7">I've worked through Module 7</label></div>
+    </section>
+
+    <!-- ================= MODULE 8 ================= -->
+    <section class="view hidden" data-view="mod-8">
+      <div class="eyebrow">Module 8 · Week 8 · tutor companion</div>
+      <h1>Bayesian Neural Networks for Reinforcement Learning</h1>
+      <div class="modnav-sub">builds on → Modules 2–4 (MLE, MAP, VI) · reframes them for sequential decisions</div>
+      <p class="lede">RL looks like a different world, but the machinery transfers wholesale. Q-learning's loss is a negative log-likelihood, so MLE / MAP / VI all apply. And variational policy gradients turn out to be max-entropy RL — Bayesian thinking preventing the policy from collapsing.</p>
+
+      <h2>1 · The vocabulary</h2>
+      <p>A <b>policy</b> \(\pi(a\mid s)\) maps states to action probabilities. The <b>return</b> \(R(\tau)=\sum_t\gamma^t r_t\) is discounted cumulative reward along a trajectory. The <b>value</b> \(V_\pi(s)\) and <b>action-value</b> \(Q_\pi(a,s)\) are expected returns from a state (or state-action). A <b>greedy</b> policy always takes the highest-\(Q\) action (exploit); <b>\(\varepsilon\)-greedy</b> acts randomly with probability \(\varepsilon\) (explore).</p>
+
+      <h2>2 · Q-learning is MLE in disguise</h2>
+      <p>Q-learning iterates: roll out trajectories, compute targets \(Q_{\text{target}}\), then regress current estimates toward them with an MSE loss:</p>
+      <div class="eq">(1/T) Σₜ | Q_target(aₜ,sₜ) − Q(aₜ,sₜ,θ) |²</div>
+      <div class="tbox intuition"><div class="tlab"><span class="g">◆</span>Intuition</div>That MSE is precisely the negative log-likelihood of a Gaussian with mean \(Q(a,s,\theta)\) and fixed variance (Module 2!). So plain deep Q-learning is <b>MLE</b>. Add L2/L1 and it's <b>MAP</b>. Put a posterior over \(\theta\) and minimize a variational objective and it's <b>VI</b>. Nothing new — the same three tools, pointed at a Q-function.</div>
+      <p>The variational Q-objective is \(E_{q_\phi(\theta)}\big[\text{MSE}\big]+\frac{2\sigma_Q^2}{T}\text{KL}[q_\phi(\theta)\|p(\theta)]\) — the ELBo shape from Module 4.</p>
+      <div class="tbox watch"><div class="tlab"><span class="g">⚠</span>Watch out</div><b>On-policy</b> targets use the greedy policy (the one you'll deploy); <b>off-policy</b> targets use \(\varepsilon\)-greedy to keep exploring during training even though you'll exploit later. Mixing them up changes what the Q-values converge to. The exploration/exploitation choice lives entirely in how you build \(Q_{\text{target}}\).</div>
+
+      <h2>3 · Policy gradients</h2>
+      <p>Instead of values, directly optimize the policy to maximize expected return \(J(\theta)=E_{p_\theta(\tau)}[R(\tau)]\). The derivation leans on the <b>log-derivative trick</b>:</p>
+      <div class="eq">∇θ pθ(τ) = pθ(τ) ∇θ log pθ(τ)   ⇒   ∇θ J = E[ R(τ) ∇θ log pθ(τ) ]</div>
+      <p>Two simplifications make it usable: the transition probabilities \(p(s_{t+1}\mid s_t,a_t)\) don't depend on \(\theta\) so they vanish from the gradient, and (by causality) an action only affects <em>future</em> reward. The result is <b>REINFORCE</b>:</p>
+      <div class="eq">∇θ J = E[ Σₜ ∇θ log π(aₜ|sₜ,θ) · Q̂(aₜ,sₜ) ]</div>
+      <div class="tbox intuition"><div class="tlab"><span class="g">◆</span>Intuition</div>Read it plainly: push up the log-probability of each action in proportion to the return that followed it. Good actions get more likely, bad ones less. The log-derivative trick is what lets you take a gradient of an expectation whose <em>distribution</em> depends on \(\theta\) — the same obstacle the reparameterization trick solved for VI, handled a different way.</div>
+
+      <h3>Variational policy gradients = max-entropy RL</h3>
+      <p>Define a target density over parameters that favors high return, \(g(\theta)\propto e^{J(\theta)/\alpha}\) (a softmax over returns with "temperature" \(\alpha\)), combine with a high-variance prior, and do VI. With a uniform prior it reduces to:</p>
+      <div class="eq">argmin_φ  E_{q_φ}[ −J(θ) ]  −  α·H(q_φ(θ))</div>
+      <div class="tbox worked"><div class="tlab"><span class="g">✎</span>Worked example</div>The temperature \(\alpha\) controls how sharply return maps to probability. For returns \(J=[1,2,4]\): at \(\alpha=2\), \(\text{softmax}(J/\alpha)=[0.14,0.23,0.63]\) — spread out, still exploring. At \(\alpha=0.5\), it's \([0.002,0.02,0.98]\) — nearly all mass on the best action. Small \(\alpha\) ⇒ greedy/collapsed; large \(\alpha\) ⇒ high-entropy/exploratory.</div>
+      <div class="tbox bnn"><div class="tlab"><span class="g">★</span>Why it matters for BNNs</div>Plain REINFORCE tends to dump all probability on whatever looked best in a few trajectories, killing exploration. The variational objective's entropy term \(-\alpha H(q_\phi)\) is a Bayesian brake: it explicitly rewards spread-out policies, keeping the agent exploring. It also composes with actor-critic (subtract a baseline \(V(s)\) to cut gradient variance without bias). Uncertainty-aware RL is just VI wearing a different hat.</div>
+
+      <div class="keyidea"><b>Key idea.</b> Q-learning's MSE is a Gaussian NLL, so MLE/MAP/VI transfer directly. Policy gradients optimize the policy via the log-derivative trick, and the variational version adds an entropy bonus that is Bayesian exploration in disguise.</div>
+      <div class="done-toggle"><input type="checkbox" data-track="cmp-8" id="cmp8"><label for="cmp8">I've worked through Module 8</label></div>
+    </section>
+
     <div id="weekViews"></div>
 
     <div class="footer">CS 4323 Study Console · built for Sunday prep · progress stored locally in your browser</div>
@@ -643,9 +917,20 @@ function navBtn(view,idx,label){
 }
 function navLabel(t){ const d=document.createElement('div'); d.className='nav-group-label'; d.textContent=t; return d; }
 
+const MODCOMPANIONS=[
+  {n:2,t:'MLE & MAP estimation'},
+  {n:3,t:'The Laplace approximation'},
+  {n:4,t:'Variational inference'},
+  {n:5,t:'Dropout-based VI'},
+  {n:6,t:'Deep ensembles'},
+  {n:7,t:'Flows & implicit VI'},
+  {n:8,t:'Bayesian RL'},
+];
 nav.appendChild(navLabel('Overview'));
 nav.appendChild(navBtn('dashboard','—','Dashboard'));
-nav.appendChild(navBtn('fundamentals','§0','Foundations'));
+nav.appendChild(navLabel('Module companions'));
+nav.appendChild(navBtn('fundamentals','M1','Module 1 · Foundations'));
+MODCOMPANIONS.forEach(m=> nav.appendChild(navBtn('mod-'+m.n,'M'+m.n, 'Module '+m.n+' · '+m.t)));
 nav.appendChild(navLabel('Weekly units'));
 WEEKS.forEach(w=> nav.appendChild(navBtn('view-'+w.id, w.n==='Finals'?'▣':('W'+w.n), 'Week '+w.n)));
 
@@ -738,6 +1023,8 @@ function overallProgress(){
   const f=fundProgress(); // count foundations as ~ one unit worth
   const ftDone = FUND_SELFTEST.reduce((a,_,i)=> a + (S.tri['ft-'+i]!==undefined?parseFloat(S.tri['ft-'+i]):0),0);
   done+=ftDone; total+=FUND_SELFTEST.length;
+  const cmpDone = MODCOMPANIONS.filter(m=>S.checks['cmp-'+m.n]).length;
+  done+=cmpDone; total+=MODCOMPANIONS.length;
   const delDone = DELIVERABLES.filter(d=>S.checks['del-'+d.id]).length; // deliverables extra credit toward vibe only
   return { pct: total? Math.round(done/total*100):0, done: Math.round(done+delDone) };
 }
@@ -827,6 +1114,12 @@ function refresh(){
   const fbtn=document.querySelector(`.nav-item[data-view="fundamentals"] .rprog`);
   if(fbtn){ const c=56.5; fbtn.style.strokeDashoffset=c-c*f.pct/100; }
   if(f.pct>0) unitsStarted++;
+  // module companions (mark-as-worked-through)
+  MODCOMPANIONS.forEach(m=>{
+    const done = !!S.checks['cmp-'+m.n];
+    const btn=document.querySelector(`.nav-item[data-view="mod-${m.n}"] .rprog`);
+    if(btn){ const c=56.5; btn.style.strokeDashoffset = done?0:c; }
+  });
   // overall
   const o=overallProgress();
   document.getElementById('heroPct').textContent=o.pct+'%';
