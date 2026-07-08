@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CS 4323 · Study Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;450;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script>
+  window.MathJax = {
+    tex: { inlineMath: [['\\(','\\)']], displayMath: [['\\[','\\]']] },
+    options: { skipHtmlTags: ['script','noscript','style','textarea','pre','code'] }
+  };
+</script>
+<script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+<style>
+:root{
+  --paper:#F5F7FA; --surface:#FFFFFF; --surface-2:#EEF1F6;
+  --ink:#14161F; --ink-soft:#565C6B; --ink-faint:#8A90A0;
+  --line:#E1E5EC; --line-strong:#CDD3DE;
+  --accent:#3B41C4; --accent-soft:#EEEFFB; --accent-deep:#262A8A;
+  --good:#1F9D6B; --good-soft:#E5F4EE;
+  --signal:#C9791F; --signal-soft:#FBF0E2;
+  --lost:#C6472E; --lost-soft:#FAE9E5;
+  --shadow:0 1px 2px rgba(20,22,31,.04),0 8px 24px -12px rgba(20,22,31,.12);
+  --radius:14px; --radius-sm:9px;
+}
+html[data-theme="dark"]{
+  --paper:#0E1017; --surface:#161A24; --surface-2:#1E2331;
+  --ink:#E7EAF1; --ink-soft:#A6ADBD; --ink-faint:#6B7284;
+  --line:#262C3A; --line-strong:#333B4D;
+  --accent:#7C82FF; --accent-soft:#1C2138; --accent-deep:#9AA0FF;
+  --good:#3FC38C; --good-soft:#12291F;
+  --signal:#E0A24E; --signal-soft:#2A2113;
+  --lost:#F0715A; --lost-soft:#2B1712;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 12px 30px -14px rgba(0,0,0,.5);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:'Inter',system-ui,sans-serif; font-size:15.5px; line-height:1.62;
+  -webkit-font-smoothing:antialiased; letter-spacing:-.003em;
+}
+h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif; letter-spacing:-.02em; line-height:1.15; color:var(--ink)}
+code,.mono,pre{font-family:'IBM Plex Mono',monospace}
+a{color:var(--accent); text-decoration:none}
+a:hover{text-decoration:underline}
+
+/* ===== Layout ===== */
+.app{display:grid; grid-template-columns:262px 1fr; min-height:100vh}
+.sidebar{
+  border-right:1px solid var(--line); background:var(--surface);
+  position:sticky; top:0; height:100vh; overflow-y:auto; padding:22px 16px 40px;
+}
+.brand{display:flex; align-items:center; gap:11px; padding:6px 8px 18px; border-bottom:1px solid var(--line); margin-bottom:14px}
+.brand .mark{width:34px; height:34px; flex:none}
+.brand .t1{font-family:'Space Grotesk'; font-weight:700; font-size:15px; line-height:1.1}
+.brand .t2{font-size:11.5px; color:var(--ink-faint); font-family:'IBM Plex Mono'; letter-spacing:.02em; margin-top:2px}
+
+.nav-group-label{font-size:10.5px; text-transform:uppercase; letter-spacing:.12em; color:var(--ink-faint); font-weight:600; padding:16px 10px 7px; font-family:'IBM Plex Mono'}
+.nav-item{
+  display:flex; align-items:center; gap:10px; width:100%; text-align:left;
+  padding:8px 10px; border-radius:var(--radius-sm); border:0; background:none; cursor:pointer;
+  color:var(--ink-soft); font-family:'Inter'; font-size:14px; font-weight:450; margin-bottom:1px;
+  transition:background .12s,color .12s; position:relative;
+}
+.nav-item:hover{background:var(--surface-2); color:var(--ink)}
+.nav-item.active{background:var(--accent-soft); color:var(--accent-deep); font-weight:600}
+.nav-item .idx{font-family:'IBM Plex Mono'; font-size:11.5px; color:var(--ink-faint); width:34px; flex:none}
+.nav-item.active .idx{color:var(--accent)}
+.nav-item .ring{width:22px;height:22px;flex:none;margin-left:auto}
+
+/* ===== Main ===== */
+.main{padding:0; max-width:none; overflow-x:hidden}
+.topbar{
+  display:flex; align-items:center; gap:14px; padding:14px 34px;
+  border-bottom:1px solid var(--line); position:sticky; top:0; z-index:20;
+  background:color-mix(in srgb, var(--paper) 82%, transparent); backdrop-filter:blur(10px);
+}
+.crumb{font-family:'IBM Plex Mono'; font-size:12px; color:var(--ink-faint); letter-spacing:.02em}
+.crumb b{color:var(--ink-soft); font-weight:500}
+.topbar .spacer{flex:1}
+.iconbtn{
+  border:1px solid var(--line-strong); background:var(--surface); color:var(--ink-soft);
+  width:36px;height:36px;border-radius:9px; cursor:pointer; display:grid; place-items:center;
+  font-size:15px; transition:.12s;
+}
+.iconbtn:hover{border-color:var(--accent); color:var(--accent)}
+.menu-toggle{display:none}
+
+.view{padding:34px; max-width:920px; margin:0 auto; animation:fade .3s ease}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.view.hidden{display:none}
+
+.eyebrow{font-family:'IBM Plex Mono'; font-size:11.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--accent); font-weight:600; margin-bottom:12px}
+.view h1{font-size:33px; font-weight:700; margin:0 0 8px}
+.view h2{font-size:21px; font-weight:600; margin:34px 0 12px; padding-top:6px}
+.view h3{font-size:16px; font-weight:600; margin:22px 0 8px}
+.lede{font-size:17px; color:var(--ink-soft); max-width:65ch; margin:0 0 8px}
+p{margin:0 0 13px}
+ul,ol{margin:0 0 14px; padding-left:22px}
+li{margin-bottom:6px}
+strong{font-weight:600}
+hr{border:0; border-top:1px solid var(--line); margin:30px 0}
+
+/* ===== Cards ===== */
+.card{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:22px 24px; margin:16px 0; box-shadow:var(--shadow)}
+.card.tight{padding:16px 18px}
+.card-head{display:flex; align-items:center; gap:10px; margin:-2px 0 12px}
+.card-head .ic{width:20px;height:20px;flex:none;color:var(--accent)}
+.card-head h3{margin:0; font-size:15.5px}
+.card.prep{border-left:3px solid var(--accent)}
+.card.recap{border-left:3px solid var(--good)}
+.card.note{background:var(--signal-soft); border-color:color-mix(in srgb,var(--signal) 30%,var(--line))}
+.card.note .card-head .ic{color:var(--signal)}
+
+/* badges */
+.badges{display:flex; flex-wrap:wrap; gap:7px; margin:14px 0 4px}
+.badge{font-family:'IBM Plex Mono'; font-size:11.5px; font-weight:500; padding:4px 10px; border-radius:100px; border:1px solid var(--line-strong); color:var(--ink-soft); background:var(--surface); display:inline-flex; gap:6px; align-items:center}
+.badge.mod{border-color:var(--accent); color:var(--accent-deep); background:var(--accent-soft)}
+.badge.del{border-color:var(--signal); color:var(--signal); background:var(--signal-soft); font-weight:600}
+
+/* equations + code */
+.eq{font-family:'IBM Plex Mono'; font-size:13.5px; background:var(--surface-2); border:1px solid var(--line); border-radius:var(--radius-sm); padding:12px 16px; margin:12px 0; overflow-x:auto; white-space:pre; color:var(--ink); line-height:1.7}
+pre.code{font-family:'IBM Plex Mono'; font-size:12.8px; background:var(--ink); color:#E7EAF1; border-radius:var(--radius-sm); padding:14px 16px; margin:12px 0; overflow-x:auto; line-height:1.6}
+html[data-theme="dark"] pre.code{background:#0A0C12; border:1px solid var(--line)}
+pre.code .cm{color:#8A90A0}
+:not(pre)>code{background:var(--surface-2); border:1px solid var(--line); padding:1px 5px; border-radius:5px; font-size:.88em}
+
+.worked{background:var(--accent-soft); border:1px solid color-mix(in srgb,var(--accent) 22%,var(--line)); border-radius:var(--radius-sm); padding:14px 18px; margin:14px 0}
+.worked .wlab{font-family:'IBM Plex Mono'; font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--accent-deep); font-weight:600; margin-bottom:6px}
+html[data-theme="dark"] .worked .wlab{color:var(--accent-deep)}
+
+/* checkable items */
+.check{display:flex; gap:12px; align-items:flex-start; padding:9px 12px; border-radius:var(--radius-sm); cursor:pointer; transition:background .12s; margin:2px 0}
+.check:hover{background:var(--surface-2)}
+.check input{appearance:none; -webkit-appearance:none; width:19px;height:19px; border:1.8px solid var(--line-strong); border-radius:6px; flex:none; margin-top:2px; cursor:pointer; position:relative; transition:.12s; background:var(--surface)}
+.check input:checked{background:var(--good); border-color:var(--good)}
+.check input:checked::after{content:""; position:absolute; left:5.5px; top:2px; width:5px; height:9px; border:solid #fff; border-width:0 2.2px 2.2px 0; transform:rotate(45deg)}
+.check span{font-size:14.5px}
+.check input:checked + span{color:var(--ink-faint)}
+.check .qref{font-family:'IBM Plex Mono'; font-size:11px; color:var(--accent); background:var(--accent-soft); padding:1px 6px; border-radius:5px; margin-left:6px; white-space:nowrap}
+
+/* tri-state self test */
+.trirow{display:flex; align-items:center; gap:12px; padding:8px 12px; border-radius:var(--radius-sm)}
+.trirow:hover{background:var(--surface-2)}
+.trirow .txt{flex:1; font-size:14.5px}
+.trirow .txt .ref{font-family:'IBM Plex Mono'; font-size:11px; color:var(--ink-faint)}
+.trichip{font-family:'IBM Plex Mono'; font-size:11.5px; font-weight:600; border:1px solid var(--line-strong); background:var(--surface); color:var(--ink-faint); padding:5px 11px; border-radius:100px; cursor:pointer; min-width:74px; text-align:center; transition:.12s; flex:none}
+.trichip[data-v="1"]{background:var(--good-soft); border-color:var(--good); color:var(--good)}
+.trichip[data-v="0.5"]{background:var(--signal-soft); border-color:var(--signal); color:var(--signal)}
+.trichip[data-v="0"]{background:var(--lost-soft); border-color:var(--lost); color:var(--lost)}
+
+/* progress bar */
+.pbar{height:7px; background:var(--surface-2); border-radius:100px; overflow:hidden; margin:8px 0}
+.pbar>span{display:block; height:100%; background:var(--good); border-radius:100px; width:0; transition:width .5s cubic-bezier(.2,.7,.2,1)}
+.pmeta{display:flex; justify-content:space-between; font-family:'IBM Plex Mono'; font-size:11.5px; color:var(--ink-faint)}
+
+/* dashboard hero */
+.hero{display:grid; grid-template-columns:1.3fr 1fr; gap:22px; align-items:stretch; margin:18px 0 8px}
+.hero .curvewrap{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:20px 22px 8px; box-shadow:var(--shadow); position:relative; overflow:hidden}
+.hero .curvewrap .clabel{position:absolute; top:18px; left:22px; font-family:'IBM Plex Mono'; font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-faint)}
+.hero .curvewrap .cpct{position:absolute; top:32px; left:22px; font-family:'Space Grotesk'; font-weight:700; font-size:40px; line-height:1}
+.hero .curvewrap .csub{position:absolute; top:80px; left:22px; font-size:12.5px; color:var(--ink-soft); max-width:52%}
+.statgrid{display:grid; grid-template-rows:repeat(3,1fr); gap:12px}
+.stat{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-sm); padding:12px 16px; box-shadow:var(--shadow); display:flex; align-items:center; gap:14px}
+.stat .n{font-family:'Space Grotesk'; font-weight:700; font-size:26px; min-width:52px}
+.stat .l{font-size:12.5px; color:var(--ink-soft); line-height:1.35}
+.stat.sig .n{color:var(--signal)}
+
+/* deliverable table */
+.deltable{width:100%; border-collapse:collapse; margin:12px 0; font-size:13.8px}
+.deltable th{text-align:left; font-family:'IBM Plex Mono'; font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-faint); font-weight:600; padding:8px 10px; border-bottom:1px solid var(--line)}
+.deltable td{padding:10px; border-bottom:1px solid var(--line); vertical-align:top}
+.deltable tr:hover td{background:var(--surface-2)}
+.deltable .due{font-family:'IBM Plex Mono'; font-size:12px; white-space:nowrap}
+.deltable .cd{font-family:'IBM Plex Mono'; font-size:11.5px; color:var(--signal); font-weight:600}
+.deltable .cd.done{color:var(--good)}
+.deltable .cd.over{color:var(--lost)}
+
+.datectl{display:flex; align-items:center; gap:12px; flex-wrap:wrap; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-sm); padding:12px 16px; margin:14px 0}
+.datectl label{font-size:13px; color:var(--ink-soft); font-weight:500}
+.datectl input[type=date]{font-family:'IBM Plex Mono'; font-size:13px; border:1px solid var(--line-strong); background:var(--surface); color:var(--ink); border-radius:7px; padding:7px 10px}
+.weekdates{font-family:'IBM Plex Mono'; font-size:12px; color:var(--ink-faint); margin:-6px 0 12px}
+.weekdates.now{color:var(--good); font-weight:600}
+
+.spine{display:grid; gap:2px; margin:12px 0}
+.spine .s{display:grid; grid-template-columns:44px 1fr; gap:14px; padding:12px 4px; border-bottom:1px solid var(--line)}
+.spine .s .k{font-family:'Space Grotesk'; font-weight:700; font-size:14px; color:var(--accent)}
+.spine .s .v b{font-weight:600}
+.spine .s .v{font-size:14px}
+
+details.acc{border:1px solid var(--line); border-radius:var(--radius-sm); margin:10px 0; background:var(--surface); overflow:hidden}
+details.acc>summary{cursor:pointer; padding:14px 18px; font-family:'Space Grotesk'; font-weight:600; font-size:15px; list-style:none; display:flex; align-items:center; gap:10px}
+details.acc>summary::-webkit-details-marker{display:none}
+details.acc>summary::before{content:"+"; font-family:'IBM Plex Mono'; color:var(--accent); font-weight:700; transition:.15s}
+details.acc[open]>summary::before{transform:rotate(45deg)}
+details.acc>summary:hover{background:var(--surface-2)}
+details.acc .accbody{padding:2px 20px 18px}
+
+.tiny{font-size:12.5px; color:var(--ink-faint)}
+.callout{border-left:3px solid var(--signal); background:var(--signal-soft); padding:10px 16px; border-radius:0 var(--radius-sm) var(--radius-sm) 0; margin:14px 0; font-size:14px}
+.footer{padding:30px 34px; text-align:center; color:var(--ink-faint); font-size:12px; border-top:1px solid var(--line); font-family:'IBM Plex Mono'}
+
+@media (max-width:860px){
+  .app{grid-template-columns:1fr}
+  .sidebar{position:fixed; z-index:60; width:280px; transform:translateX(-100%); transition:transform .25s; box-shadow:var(--shadow)}
+  .sidebar.open{transform:none}
+  .menu-toggle{display:grid}
+  .hero{grid-template-columns:1fr}
+  .view{padding:22px 18px}
+  .view h1{font-size:27px}
+  .scrim{position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:50; display:none}
+  .scrim.show{display:block}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important}}
+</style>
+</head>
+<body>
+<div class="scrim" id="scrim" onclick="toggleMenu(false)"></div>
+<div class="app">
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <svg class="mark" viewBox="0 0 40 40" fill="none"><rect width="40" height="40" rx="10" fill="var(--accent)"/><path id="brandCurve" d="M6 30 Q20 8 34 30" stroke="#fff" stroke-width="2.4" fill="none" stroke-linecap="round"/><circle cx="20" cy="30" r="2" fill="#fff"/></svg>
+      <div>
+        <div class="t1">CS 4323</div>
+        <div class="t2">study console</div>
+      </div>
+    </div>
+    <nav id="nav"></nav>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <main class="main">
+    <div class="topbar">
+      <button class="iconbtn menu-toggle" onclick="toggleMenu(true)" aria-label="Menu">☰</button>
+      <div class="crumb">CS 4323 · Bayesian Methods for Neural Networks <b id="crumbSec"></b></div>
+      <div class="spacer"></div>
+      <button class="iconbtn" id="themeBtn" onclick="toggleTheme()" aria-label="Toggle theme" title="Light / dark">◐</button>
+    </div>
+
+    <!-- ===== DASHBOARD ===== -->
+    <section class="view" data-view="dashboard">
+      <div class="eyebrow">Summer Quarter · AY 2026 · Q4</div>
+      <h1>Your semester, one console.</h1>
+      <p class="lede">Prep on Sunday, run the week, close the loop with a recap. Check things off as you go — progress saves in this browser, so it's here every time you come back.</p>
+
+      <div class="hero">
+        <div class="curvewrap">
+          <div class="clabel">Knowledge posterior</div>
+          <div class="cpct" id="heroPct">0%</div>
+          <div class="csub">Starts wide (prior), sharpens as you master the material — same idea the course is built on.</div>
+          <svg id="posterior" viewBox="0 0 460 220" style="width:100%;height:auto;margin-top:78px"></svg>
+        </div>
+        <div class="statgrid">
+          <div class="stat"><div class="n" id="stWeeks">0/9</div><div class="l">weekly units with progress logged</div></div>
+          <div class="stat sig"><div class="n" id="stNextDel">—</div><div class="l" id="stNextDelL">next project deliverable</div></div>
+          <div class="stat"><div class="n" id="stItems">0</div><div class="l">total check-offs completed</div></div>
+        </div>
+      </div>
+
+      <h2>Set your term start</h2>
+      <p class="tiny">Pick the Monday of Week 1 (from Sakai). Everything below fills in real dates and a live countdown to each deliverable.</p>
+      <div class="datectl">
+        <label for="termStart">Week 1 Monday</label>
+        <input type="date" id="termStart" onchange="setTerm(this.value)">
+        <span class="tiny" id="termNote">no date set — using “Week N” labels</span>
+      </div>
+
+      <h2>Project deliverables — 50% of your grade</h2>
+      <p>The project starts earlier than people expect. You already have two strong candidates from prior work (the OSINT deployment-detection pipeline and the Bayesian FX engine) — pick one by the end of Week 2 and let every method feed a deliverable.</p>
+      <table class="deltable">
+        <thead><tr><th style="width:26px"></th><th>Deliverable</th><th>What it is</th><th>Due</th><th>Countdown</th></tr></thead>
+        <tbody id="delBody"></tbody>
+      </table>
+
+      <h2>The course spine</h2>
+      <p>Every method is the same question asked with more sophistication: <b>what do we know about the parameters \(\theta\), and how sure are we?</b></p>
+      <div class="spine">
+        <div class="s"><div class="k">W3</div><div class="v"><b>Point estimates.</b> MLE picks the single best \(\theta\); MAP adds a prior. One number per parameter, no uncertainty.</div></div>
+        <div class="s"><div class="k">W4</div><div class="v"><b>A Gaussian after training.</b> Laplace wraps a Gaussian around the MAP point using curvature (the Hessian). First real posterior.</div></div>
+        <div class="s"><div class="k">W5–6</div><div class="v"><b>A Gaussian during training.</b> Variational inference learns the posterior by maximizing the ELBo. Dropout is a scrappy version of this.</div></div>
+        <div class="s"><div class="k">W7</div><div class="v"><b>Beyond one Gaussian.</b> Ensembles capture multiple modes; normalizing flows &amp; implicit VI make \(q\) an arbitrary network.</div></div>
+        <div class="s"><div class="k">W8</div><div class="v"><b>A new problem.</b> RL, reframed so all of the above still applies.</div></div>
+        <div class="s"><div class="k">W9–10</div><div class="v"><b>Sampling instead of approximating.</b> MCMC / HMC / SGLD draw from the true posterior; SWAG reads it off the SGD trajectory.</div></div>
+      </div>
+
+      <div class="callout"><b>Grade weights:</b> Project 50% · Problem Sets 20% · Labs 20% · Summaries 10%. Problem sets are graded on completion (0–3 per question), so attempting everything beats perfecting a few.</div>
+
+      <div style="margin-top:26px; display:flex; gap:10px; flex-wrap:wrap">
+        <button class="iconbtn" style="width:auto; padding:0 16px; gap:8px; font-family:'Inter'; font-size:13px" onclick="resetProgress()">Reset all progress</button>
+      </div>
+    </section>
+
+    <!-- ===== FUNDAMENTALS ===== -->
+    <section class="view hidden" data-view="fundamentals">
+      <div class="eyebrow">Weeks 1–2 · Module 1 · assume-nothing rebuild</div>
+      <h1>Foundations deep dive</h1>
+      <p class="lede">The whole course is built out of four tools. Rebuild them properly here and Weeks 3–10 become recognition, not learning-from-scratch. A model is \(f(x,\theta)\): linear algebra <b>writes</b> it, calculus <b>trains</b> it, probability measures <b>“good”</b> and expresses <b>doubt</b>.</p>
+
+      <details class="acc" open><summary>Part 1 — Linear algebra: the language of data</summary><div class="accbody">
+        <p>A dataset is a grid of numbers: one row per example, one column per feature. Linear algebra does arithmetic on the whole grid at once. A neural-network <em>layer</em> is literally one matrix multiplication — so this isn't background, it's the object of study.</p>
+        <h3>Vectors, matrices, tensors</h3>
+        <p>A <b>vector</b> is an ordered list of numbers (a point/arrow in space). A <b>matrix</b> is an \(n\times m\) grid; your <b>data matrix</b> \(X\) is \(n\times d\) — \(n\) examples, \(d\) features, row \(i\) is one example. A <b>tensor</b> is the same idea with more axes (a batch of images is 4-D).</p>
+        <h3>Z-scoring (put features on one scale)</h3>
+        <div class="eq">z = (x − μ) / σ      (per feature/column)</div>
+        <div class="worked"><div class="wlab">Worked</div>Column <code>[2,4,6,8]</code>: μ = 5, σ = √(20/4) = √5 ≈ 2.236 → z = <b>[−1.342, −0.447, 0.447, 1.342]</b>. Centered on 0, symmetric — z-scoring working.</div>
+        <h3>Matrix multiplication — the operation</h3>
+        <p>Entry \((i,j)\) of the product is the dot product of row \(i\) of the left matrix with column \(j\) of the right. Inner dimensions must match and cancel: \((n\times d)(d\times m)=(n\times m)\).</p>
+        <div class="eq">A = [1 2]   B = [5 6]        AB = [1·5+2·7  1·6+2·8] = [19 22]
+    [3 4]       [7 8]             [3·5+4·7  3·6+4·8]   [43 50]</div>
+        <ul>
+          <li><b>Order matters:</b> \(X\theta \neq \theta X\) — it may not even be a legal multiply. Not commutative.</li>
+          <li><b>The point:</b> with data \(X\) (\(n\times d\)) and parameters \(\theta\) (\(d\times m\)), \(X\theta\) is a linear model / one NN layer applied to every example at once.</li>
+        </ul>
+        <h3>The rest of the toolkit</h3>
+        <ul>
+          <li><b>Transpose</b> \(A^\top\): flip rows/cols. <b>Dot product</b> \(a\cdot b=ab^\top\): a single number measuring alignment. <b>Outer product</b> \(a^\top b\): a \(d\times d\) matrix (builds covariance/Fisher in W4). <b>Hadamard</b> \(A\odot B\): element-wise (dropout masks in W6).</li>
+          <li><b>Inverse</b> \(A^{-1}\): the "divide by A" that undoes it (\(AA^{-1}=I\)). <b>Trace:</b> sum of the diagonal.</li>
+          <li><b>Determinant</b> \(|A|=a_{11}a_{22}-a_{12}a_{21}\) for 2×2. Its <b>absolute value</b> is the area/volume the rows span.</li>
+        </ul>
+        <div class="card note tight"><div class="card-head"><span class="ic">⚠</span><h3>One correction to carry forward</h3></div>The determinant <em>can be negative</em> — the sign encodes orientation; it's \(\big||A|\big|\) that equals the area. (The notes say "greater than zero," true only of the magnitude.) You need the honest version because the multivariate Gaussian's normalizer uses \(|\Sigma|\).</div>
+        <p class="tiny"><b>Why it matters later:</b> the Gaussian uses \(\Sigma^{-1}\) and \(|\Sigma|\); Laplace sets a covariance to an inverse Hessian. Fuzzy inverse/determinant now = fog in Week 4.</p>
+      </div></details>
+
+      <details class="acc"><summary>Part 2 — Calculus: how models learn</summary><div class="accbody">
+        <p>Training = find the knobs \(\theta\) that make the loss smallest. A <b>derivative</b> is the slope; the optimum is where the slope is zero; following the slope downhill is the training algorithm.</p>
+        <h3>The derivative</h3>
+        <div class="eq">df/dx = lim(Δx→0) [ f(x+Δx) − f(x) ] / Δx</div>
+        <p>Nudge \(x\), see how much \(f\) moves. Positive slope → \(f\) rises with \(x\); zero slope → a flat spot (peak/valley) — and that flat spot is what training hunts.</p>
+        <h3>Rules you actually use</h3>
+        <p>Constant \(\to 0\); \(cx\to c\); power \(x^c\to cx^{c-1}\); sum is term-by-term; \(e^x\to e^x\); \(\ln x\to 1/x\). The <b>chain rule</b> powers backprop:</p>
+        <div class="eq">d f(g(x))/dx = f′(g(x)) · g′(x)</div>
+        <div class="worked"><div class="wlab">Worked</div>\(f(x)=(3x+1)^2\): outside \(2(3x+1)\), inside \(3\) → \(f'(x)=6(3x+1)\).</div>
+        <h3>Why derivatives = learning</h3>
+        <p>Minimize \(a^2\): set \(2a=0 \Rightarrow a=0\). When you can't solve directly, step against the slope:</p>
+        <div class="eq">a ← a − α · (df/da)</div>
+        <div class="worked"><div class="wlab">Worked · PS1 Q4</div>Minimize \(a^2\), start \(a=1\), \(\alpha=0.01\), \(df/da=2a\).<br>Step 1: \(1-0.01(2)=\mathbf{0.98}\). Step 2: \(0.98-0.01(1.96)=\mathbf{0.9604}\). Crawling toward 0. ✓</div>
+        <h3>Many knobs: gradient · Jacobian · Hessian</h3>
+        <p>A <b>partial derivative</b> \(\partial L/\partial\theta_k\) nudges just \(\theta_k\). Stack them into the <b>gradient</b> \(\nabla_\theta L\) — points steepest uphill, so descent is \(\theta \leftarrow \theta - \alpha\nabla_\theta L\). Optimum when every entry is 0.</p>
+        <div class="worked"><div class="wlab">Worked · PS1 Q6</div>\(g=\theta_1x_1+\theta_2x_2+\theta_3x_3+\theta_4\) → \(\partial g/\partial\theta_2=x_2\); full gradient \(\nabla_\theta g=[x_1,x_2,x_3,1]\).</div>
+        <p>The <b>Jacobian</b> stacks gradients for multi-output functions. The <b>Hessian</b> \(H_{ij}=\partial^2L/\partial\theta_i\partial\theta_j\) is <b>curvature</b> — how the slope itself changes.</p>
+        <div class="card note tight"><div class="card-head"><span class="ic">◈</span><h3>The emotional core of the course, planted early</h3></div>Laplace (W4) sets posterior covariance to the <em>inverse</em> Hessian. High curvature (steep narrow valley) → confident → small variance. Low curvature (flat floor) → uncertain → large variance. <b>Curvature becomes uncertainty.</b></div>
+        <h3>Taylor series (local approximation)</h3>
+        <div class="eq">1st order:  L(θ+Δθ) ≈ L(θ) + ∇L·Δθ
+2nd order:  L(θ+Δθ) ≈ L(θ) + ∇L·Δθ + ½ Δθᵀ H Δθ</div>
+        <p>The Laplace approximation <em>is</em> a 2nd-order Taylor expansion of the log-posterior — and a log turned into a parabola is a Gaussian. That's the whole trick, previewed.</p>
+      </div></details>
+
+      <details class="acc"><summary>Part 3 — Probability: reasoning under uncertainty</summary><div class="accbody">
+        <p>Bayesian methods report a prediction <em>and how sure they are</em>. Probability is the language for that.</p>
+        <h3>Distributions, PMF vs PDF</h3>
+        <p>Axioms: \(0\le P\le1\); \(P(S)=1,\ P(\varnothing)=0\); disjoint events add. <b>Discrete</b> → a PMF gives probability directly (\(P(x)=p(x)\)). <b>Continuous</b> → the probability of an exact value is 0, so we use a <b>density</b> and take area:</p>
+        <div class="eq">P(a ≤ x ≤ b) = ∫ₐᵇ p(x) dx        P(x) = p(x)·dx   (so P ≠ p)</div>
+        <div class="callout">That <code>dx</code> is exactly the term that <b>cancels</b> in the Week-3 MLE/MAP derivations. Flag it now so it isn't a surprise. Every PDF is \(p(x)=f(x)/Z\) with normalizer \(Z=\int f(x)\,dx\) — the same \(Z\) that becomes the "evidence" in Bayes' rule.</div>
+        <h3>The three distributions to know cold</h3>
+        <ul>
+          <li><b>Bernoulli</b> (one coin, 0/1): \(p(x)=\rho^x(1-\rho)^{1-x}\). Its neg-log becomes binary cross-entropy.</li>
+          <li><b>Categorical</b> (one \(c\)-sided die): probabilities per class. Neg-log becomes cross-entropy.</li>
+          <li><b>Gaussian</b> (bell curve): \(p(x)=\tfrac{1}{\sqrt{2\pi\sigma^2}}\exp\!\big(-\tfrac{(x-\mu)^2}{2\sigma^2}\big)\). Multivariate version uses \(\mu\) and \(\Sigma\) (hence \(|\Sigma|\) and \(\Sigma^{-1}\)). <b>Memorize this one.</b></li>
+        </ul>
+        <h3>Bayes' rule — the crown jewel</h3>
+        <p>Write the joint two ways and set equal:</p>
+        <div class="eq">P(X|Y)P(Y) = P(Y,X) = P(Y|X)P(X)   →   P(X|Y) = P(Y|X)P(X) / P(Y)</div>
+        <p>On parameters, this is the entire back half of the course:</p>
+        <div class="eq">P(θ|D) = P(D|θ)·P(θ) / P(D)
+posterior = likelihood · prior / evidence</div>
+        <div class="worked"><div class="wlab">Worked · why Bayes is counterintuitive</div>Disease in 1% (\(P(D)=.01\)); test 99% sensitive, 5% false-positive. You test positive.<br>\(P(+) = .99(.01)+.05(.99)=.0594\) &nbsp;(this step is <b>marginalization</b>).<br>\(P(D\,|\,+) = .0099/.0594 \approx \mathbf{16.7\%}\). A "99% accurate" test, yet most positives are false alarms — because the prior is low. <em>This</em> is why you want Bayesian methods.</div>
+        <h3>Expectation &amp; variance (weighted averages)</h3>
+        <div class="eq">E[f(x)] = Σ p(x)f(x)          Var[f(x)] = E[f(x)²] − E[f(x)]²</div>
+        <p>Bigger variance = more spread = <b>more uncertainty</b>. That equivalence is why a Bayesian model reports variance as its confidence.</p>
+        <div class="worked"><div class="wlab">Worked</div>\(X=\{1,5,10\}\) w.p. \(\{.2,.5,.3\}\): \(E[X]=5.7\), \(E[X^2]=42.7\), \(\mathrm{Var}=42.7-5.7^2=\mathbf{10.21}\).</div>
+      </div></details>
+
+      <details class="acc"><summary>Part 4 — The one derivation that matters most</summary><div class="accbody">
+        <p>You now have the model, the training, and the "good/uncertain" measure. This fuses them.</p>
+        <h3>Loss functions &amp; the log trick</h3>
+        <p><b>MSE</b> \(=\frac1n\sum(y_i-f(x_i,\theta))^2\). Three invariances you'll lean on: adding a constant, multiplying by a positive constant, and applying a monotonic function (like \(\log\)) all <b>leave the argmin unchanged</b>. We use \(\log\) because it turns products into sums (no underflow, tractable derivatives).</p>
+        <h3>Gaussian log-likelihood → MSE</h3>
+        <p>The single most important move in the first half. <em>Why is squared error “right”?</em> Because it's what you get from assuming Gaussian errors and maximizing likelihood.</p>
+        <div class="eq">p(yᵢ|xᵢ,θ) = 1/√(2πσ²) · exp( −(yᵢ − f(xᵢ,θ))² / (2σ²) )
+
+argmax Σ log p   =  argmin Σ  −log[ 1/√(2πσ²) · exp(−(yᵢ−f)²/2σ²) ]
+                 =  argmin Σ  log√(2πσ²) + (yᵢ−f)²/(2σ²)
+                 =  argmin Σ  logσ + ½log(2π) + (yᵢ−f)²/(2σ²)
+                       ↑ drop constants (½log2π), σ fixed, ×1/(2σ²) positive
+                 =  argmin Σ (yᵢ − f(xᵢ,θ))²      =  MSE  (÷n)</div>
+        <p>So minimizing MSE ≡ maximizing a Gaussian-error likelihood with fixed variance. The moment you <em>learn</em> \(\sigma\) instead of fixing it, the model reports its own uncertainty (homoscedastic = one shared \(\sigma\); heteroscedastic = \(\sigma\) depends on input). That door is the rest of the course.</p>
+        <h3>The bridge to Week 3</h3>
+        <div class="eq">argmax P(θ|D) = argmax [ log p(D|θ) + log p(θ) ]   (evidence drops — constant in θ)</div>
+        <p>That extra \(\log p(\theta)\) is where <b>regularization</b> comes from: mean-zero Gaussian prior → L2, mean-zero Laplace prior → L1. Every ingredient is something you just built.</p>
+      </div></details>
+
+      <div class="card recap"><div class="card-head"><span class="ic">✓</span><h3>Readiness self-test</h3></div>
+        <p class="tiny">Rate each: <b>Solid</b> (cold) · <b>Shaky</b> (with notes) · <b>Lost</b>. You're ready for Week 3 when nothing's Lost. The two bolded items carry you through Week 6 — over-practice those.</p>
+        <div id="triFund"></div>
+        <div class="pmeta" style="margin-top:10px"><span>Foundations mastery</span><span id="fundPctL">0%</span></div>
+        <div class="pbar"><span id="fundPct"></span></div>
+      </div>
+    </section>
+
+    <!-- ===== WEEK VIEWS injected by JS ===== -->
+    <div id="weekViews"></div>
+
+    <div class="footer">CS 4323 Study Console · built for Sunday prep · progress stored locally in your browser</div>
+  </main>
+</div>
+
+<script>
+/* ============================================================
+   DATA
+============================================================ */
+const FUND_SELFTEST = [
+  ["Multiply two 2×2 matrices by hand.","§1"],
+  ["State the shape rule for (n×d)(d×m); explain why Xθ ≠ θX.","§1"],
+  ["Compute a 2×2 determinant; say what |det| means geometrically.","§1"],
+  ["Differentiate a²; do two GD steps from a=1, α=0.01.","§2"],
+  ["Apply the chain rule to (3x+1)².","§2"],
+  ["Compute ∂g/∂θ₂ and the full gradient of a linear layer.","§2"],
+  ["Explain what the Hessian measures and why curvature = uncertainty.","§2"],
+  ["Write 1st- and 2nd-order Taylor approximations of a loss.","§2"],
+  ["State the axioms; explain PMF vs PDF and where dx comes in.","§3"],
+  ["Write the Bernoulli PMF and univariate Gaussian PDF from memory.","§3"],
+  ["★ Derive Bayes' rule in three lines; label the four terms.","§3"],
+  ["Redo the disease-test example and get ~17%.","§3"],
+  ["Define expectation & variance; compute them for a small distribution.","§3"],
+  ["State the three argmin invariances and why we take logs.","§4"],
+  ["★ Derive Gaussian log-likelihood → MSE, naming dropped constants.","§4"],
+  ["Explain how MLE becomes MAP and where regularization comes from.","§4"],
+];
+
+const WEEKS = [
+  { id:"w12", n:"1–2", wk:1, title:"The mathematical & probabilistic toolkit",
+    badges:[["mod","Module 1"],["","PS 1"],["","Lab 1"],["","Summary 1"]],
+    sentence:"Re-install the vocabulary — linear algebra, calculus, probability — that every later method is written in. Goal is fluency, not depth.",
+    prep:[
+      "Read Module 1 in order: §3 data → §4.1 matrix math → §4.2 probability → §5 objectives & optimization.",
+      "Slow down on the Hessian and 2nd-order Taylor (§5) — they come back hard in Week 4.",
+      "Work every worked example in the Foundations deep dive; run the code snippets."
+    ],
+    cold:[
+      "Derivative of a²; two GD steps; the analytic argmin.",
+      "∂g/∂θ₂ for a linear layer, and the same for its square (chain rule).",
+      "Bayes' rule derived from conditional probability.",
+      "Log of the Gaussian PDF written as a squared-error term.",
+      "Definitions of expectation and variance."
+    ],
+    recap:[
+      ["Differentiation — PS1 Q1–8: derivative def, power rule, GD steps, chain rule.","Q1–8"],
+      ["Vectors/matrices — PS1 Q9–12: g in summation/dot/matrix form, matrix multiply, det of a diagonal, Hessian of the squared linear form.","Q9–12"],
+      ["Probability — PS1 Q13–26: axioms, complement/product rules, independence, Bayes derivation, marginalization, Bernoulli (+log), Gaussian PDFs (+ log as squared error), expectation, variance.","Q13–26"]
+    ],
+    project:"By end of Week 2: commit to your problem + dataset, and start collecting references for Deliverable I."
+  },
+  { id:"w3", n:"3", wk:3, title:"Maximum Likelihood & Maximum a Posteriori",
+    badges:[["mod","Module 2"],["","PS 2"],["","Lab 2"],["","Summary 2"],["del","Deliverable I due"]],
+    sentence:"MLE finds the θ that makes your data most likely; MAP adds a prior — and priors ARE regularization (Gaussian→L2, Laplace→L1).",
+    prep:[
+      "Module 2 order: §2 MLE→NLL (Bernoulli & Gaussian by hand) → §3 supervised MLE / why NLL collapses to MSE → §3.4 classification (sigmoid/softmax) → §5 MAP & §5.3 priors-as-regularization.",
+      "The L2-from-Gaussian and L1-from-Laplace derivations are near-certain PS/exam material — do them by hand."
+    ],
+    cold:[
+      "MLE → NLL derivation (the log + I.I.D. product step).",
+      "Gaussian NLL → MSE; Bernoulli/categorical NLL → cross-entropy.",
+      "L2-from-Gaussian-prior and L1-from-Laplace-prior, in full.",
+      "MAP objectives for Gaussian+Gaussian, Bernoulli+Gaussian, categorical+Gaussian."
+    ],
+    recap:[
+      ["MLE Q1–5: define likelihood; relate to p(y|x,θ); Gaussian-prediction NLL; one-layer NN in matrix form; homoscedastic vs heteroscedastic.","Q1–5"],
+      ["Priors Q6–8: L2-from-Gaussian & L1-from-Laplace derivations; default outputs under each prior.","Q6–8"],
+      ["MAP Q9–12: general MAP derivation; the three concrete MAP objectives.","Q9–12"]
+    ],
+    project:"⚠ Deliverable I (Problem Background) is due. Keep it tight — problem, importance, prior attempts, why Bayesian. Graded on completeness, so finish it."
+  },
+  { id:"w4", n:"4", wk:4, title:"The Laplace Approximation",
+    badges:[["mod","Module 3"],["","PS 3"],["","Lab 3"],["","Summary 3"]],
+    sentence:"Take your MAP point estimate and wrap a Gaussian around it, using the curvature (Hessian) to set the covariance — your first honest posterior.",
+    prep:[
+      "Dense week. Module 3 order: §2–3 the approximation (2nd-order Taylor at θ_MAP, gradient vanishes) → §3 Fisher information & diagonal approx → §4 pruning → §5–7 Bayesian model averaging + aleatoric/epistemic → §8–9 calibration & continual learning.",
+      "Reread the Foundations Hessian/Taylor sections first — this week is those two ideas cashed in."
+    ],
+    cold:[
+      "The Laplace derivation (Taylor → Gaussian → normalizing constant).",
+      "Fisher = −E[Hessian], and the diagonal empirical Fisher.",
+      "Variance decomposition: aleatoric + epistemic, and its MC estimator.",
+      "The continual-learning derivation from Bayes' rule."
+    ],
+    recap:[
+      ["Laplace Q1–2: derive the Laplace approximation; derive Bayesian model averaging.","Q1–2"],
+      ["Pruning Q3: identify removable Gaussian parameters.","Q3"],
+      ["Uncertainty Q4–10: aleatoric vs epistemic; measure each for single-θ and model-averaged, Gaussian and categorical.","Q4–10"],
+      ["Continual learning Q11: derive it from Bayes' rule.","Q11"]
+    ],
+    project:"Build the MLE/MAP pipeline for your problem NOW, while the theory's fresh — you write it up for Deliverable II in Week 6."
+  },
+  { id:"w5", n:"5", wk:5, title:"Variational Inference",
+    badges:[["mod","Module 4"],["","PS 4"],["","Lab 4"],["","Summary 4"]],
+    sentence:"Instead of bolting a Gaussian on after training (Laplace), LEARN the approximate posterior q_φ(θ) during training by minimizing KL — i.e. maximizing the ELBo.",
+    prep:[
+      "Module 4 order: §2 KL divergence (asymmetric; splits into data term + prior KL, like MAP) → §3 ELBo (evidence = KL + ELBo) → §4 mean-field Gaussian VI: reparameterization trick, KL between two Gaussians, local reparam & flipout.",
+      "The reparam trick is what makes q_φ differentiable — understand why you can't backprop through a raw sample."
+    ],
+    cold:[
+      "KL → (data term + prior KL) derivation (PS4 Q1).",
+      "Additive-Gaussian reparam trick and why it's needed.",
+      "KL between two Gaussians (memorize the closed form).",
+      "Local reparameterization derivation (μ_y = xθᵀ, σ²_y = x²(θ²)ᵀ)."
+    ],
+    recap:[
+      ["Q1–2: derive the BNN variational loss from KL; write it with MC estimation for both terms.","Q1–2"],
+      ["Q3–6: additive reparam trick; KL between two Gaussians; derive local reparam; explain flipout.","Q3–6"]
+    ],
+    project:"Decide your two approximate-Bayesian methods for Deliverable III (Laplace, Gaussian VI, dropout VI, HMC) — pick by end of Week 6."
+  },
+  { id:"w6", n:"6", wk:6, title:"Dropout-based Variational Inference",
+    badges:[["mod","Module 5"],["","PS 5"],["","Lab 5"],["","Summary 5"],["del","Deliverable II due"]],
+    sentence:"Ordinary dropout, kept on at test time and averaged, is a cheap approximate posterior — but the VI theory is imperfect, and fixing it is what concrete & spike-and-slab dropout do.",
+    prep:[
+      "Module 5 order: §2–3 dropout & MC dropout (sample masks at train AND test; the 1/(1−p) scaling; MC dropout + Laplace) → §3.2 MC dropout as VI + its two theoretical problems → §4 concrete dropout (learn p_drop) → §5 spike-and-slab.",
+      "Nail the two inconsistencies: data term assumes Bernoulli while prior term assumes a Gaussian mixture; and σ_q, p_drop are hyperparameters, not learned."
+    ],
+    cold:[
+      "Train vs test behavior of dropout and the 1/(1−p_drop) scaling.",
+      "The variational distribution MC dropout assumes vs actually uses (and independence).",
+      "KL divergence between two Bernoullis.",
+      "Spike-and-slab weight decomposition and its KL."
+    ],
+    recap:[
+      ["Q1–5: train/test dropout behavior; assumed variational distribution; actual distribution + independence; is p_drop learned.","Q1–5"],
+      ["Q6–10: concrete-dropout probability function; KL between two Bernoullis; concrete-dropout KL term (why it changed); spike-and-slab decomposition & KL.","Q6–10"]
+    ],
+    project:"⚠ Deliverable II (MLE then MAP) is due — you built the pipeline in Week 4, so this week is writing + results."
+  },
+  { id:"w7", n:"7", wk:7, title:"Deep Ensembles, Normalizing Flows & Implicit VI",
+    badges:[["mod","Modules 6 & 7"],["","PS 6"],["","Lab 6"],["","Summary 6"]],
+    sentence:"A single Gaussian can't capture a multi-modal posterior — so: train many models (ensembles), make q a flexible invertible net (flows), or make q ANY net you can sample from (implicit VI).",
+    prep:[
+      "Two modules. Module 6 (Ensembles): ensembles as VI over MAP points; why log q drops as a constant; ensemble + Laplace → Gaussian mixture; mixture-of-Gaussians VI vs separate Gaussians.",
+      "Module 7 (Flows + Implicit VI): change-of-variables with the log-det-Jacobian; what makes a net a flow (invertible + tractable Jacobian); implicit VI via a discriminator (optimal logit = −log q/p) or kNN density estimation."
+    ],
+    cold:[
+      "Change-of-variables, single and multivariate; why dε/dθ ≠ 0 needs invertibility.",
+      "log q(θ) = log p(ε) + log|det (df⁻¹/dθ)|.",
+      "Discriminator derivation → D(θ) = p/(p+q), optimal logit −log q/p.",
+      "Two invertible architectures, from memory."
+    ],
+    recap:[
+      ["Flows Q1–5: derive single-var change of variables; define Jacobian; multivariate version; two-term log form; two invertible architectures.","Q1–5"],
+      ["Implicit VI Q6–9: explicit vs implicit in words; which part of the objective ratio methods approximate; what a discriminator is; derive how it solves the ratio problem.","Q6–9"]
+    ],
+    project:"Keep building toward Deliverable III (Week 9) — your two chosen approximate-Bayesian methods."
+  },
+  { id:"w8", n:"8", wk:8, title:"Bayesian Reinforcement Learning",
+    badges:[["mod","Module 8"],["","PS 7"],["","Lab 7"],["","Summary 7"]],
+    sentence:"RL is a different problem, but the same machinery applies — Q-learning's loss is just an NLL (so MLE/MAP/VI transfer), and variational policy gradients are max-entropy RL in disguise.",
+    prep:[
+      "Module 8 order: §1 notation (policy, return, value, Q; greedy vs ε-greedy) → §2 Q-learning: loss = MSE = Gaussian NLL → MLE; +L2/L1 → MAP; variational Q objective → §3 policy gradients: REINFORCE, log-derivative trick, causality/baseline; variational PG = max-entropy; actor-critic/advantage."
+    ],
+    cold:[
+      "Why the Q-learning MSE loss IS MLE, and what turns it into MAP.",
+      "The variational inference objective for Q-learning.",
+      "Variational PG setup: g(θ) ∝ exp(J(θ)/α); high-variance prior prevents policy collapse."
+    ],
+    recap:[
+      ["Notation Q1–5: policy, return, goal of RL, Q-value, two ways from Q-values to a policy.","Q1–5"],
+      ["Q-learning Q6–9: describe it; relate to MLE; relate to MAP; the VI objective.","Q6–9"],
+      ["Policy gradients Q10–11: the idea; the VI setup and objective.","Q10–11"]
+    ],
+    project:"Deliverable III modeling should be running by now — leave Week 9 for writing, not debugging."
+  },
+  { id:"w910", n:"9–10", wk:9, title:"Random Walk / Sampling-Based Methods",
+    badges:[["","PS 8 only — no notes module"],["","Lab 8"],["","Summary 8"],["del","Deliv. III (W9)"],["del","IV + Present (W10)"]],
+    sentence:"Rather than APPROXIMATING the posterior with a Gaussian, these SAMPLE from it — MCMC/HMC/SGLD draw samples; SWA/SWAG read a local Gaussian off the SGD trajectory you already ran.",
+    prep:[
+      "⚠ Only block with no lecture-notes module — content is in PS8 + lecture. Use Murphy's Probabilistic ML (the free syllabus reference) for MCMC & HMC chapters.",
+      "Work PS8 topics: SWA/SWAG → MCMC foundations (chain requirements, Metropolis-Hastings decomposition & acceptance) → random-walk MH (symmetric proposal simplifies acceptance) → HMC (potential = −log posterior, kinetic = ½pᵀM⁻¹p) → SGLD (SGD + scaled noise = sampling)."
+    ],
+    cold:[
+      "How SWA computes its weights and why averaging helps; how SWAG models the posterior locally.",
+      "The two Markov-chain requirements; the MH proposal/acceptance decomposition and acceptance ratio.",
+      "Why the symmetric proposal simplifies acceptance.",
+      "HMC's two energy terms and why it mixes better than random-walk MH."
+    ],
+    recap:[
+      ["SWA Q1–2: how SWA computes parameters (and why); how SWAG models the posterior locally.","Q1–2"],
+      ["MCMC Q3–7: two chain requirements; MH transition decomposition; MH acceptance; random-walk MH proposal + simplification; HMC energy terms.","Q3–7"],
+      ["Q8: the main idea behind HMC.","Q8"]
+    ],
+    project:"⚠ Crunch. Deliverable III (W9) = two approximate Bayesian methods applied. Deliverable IV + the 7-min presentation (W10) — rehearse out loud twice; 7 min is shorter than it feels."
+  },
+  { id:"finals", n:"Finals", wk:11, title:"Project — final paper & code",
+    badges:[["del","Final deliverable"]],
+    sentence:"No new material. Fold in what you learned from presenting and ship a paper that hits every rubric row.",
+    prep:[
+      "Introduction (Excellent): problem + importance, literature cited AND explained, your contribution vs the literature.",
+      "Methods (Excellent): the probabilistic methods with math AND the main idea in words.",
+      "Experiments (Excellent): data + processing explained, architectures in a figure/table, results shown visually.",
+      "Discussion (Excellent): results tied back to the intro's problem and claimed contributions."
+    ],
+    cold:[
+      "Every method in your paper explained with both math and plain-language intuition.",
+      "A clean architecture figure/table and result visualizations.",
+      "Discussion that answers the question you posed in the introduction."
+    ],
+    recap:[
+      ["Paper hits Excellent on all four rubric sections (Intro / Methods / Experiments / Discussion).","rubric"],
+      ["Code + paper uploaded to GitLab; LaTeX template + BibTeX/Zotero used.","submit"],
+      ["Presentation feedback incorporated into the final version.","reflect"]
+    ],
+    project:"Papers/code are due after presentations so peer & instructor feedback can factor in. Consider these suggestions and apply them."
+  }
+];
+
+const DELIVERABLES = [
+  { id:"del1", name:"I — Problem Background", what:"Problem + why it matters + prior attempts + why Bayesian methods fit.", wk:3 },
+  { id:"del2", name:"II — Point Estimation", what:"Apply a model with MLE, then MAP.", wk:6 },
+  { id:"del3", name:"III — Approximate Bayesian", what:"Apply two of: Laplace, Gaussian VI, dropout VI, HMC.", wk:9 },
+  { id:"del4", name:"IV — Discussion", what:"Tie all results back to the introduction.", wk:10 },
+  { id:"del5", name:"Presentation", what:"7-minute brief (+3 for Q&A).", wk:10 },
+  { id:"del6", name:"Final paper + code", what:"Polished, incorporating presentation feedback.", wk:11 },
+];
+
+/* ============================================================
+   STATE / STORAGE
+============================================================ */
+const KEY="cs4323-console-v1";
+let S = { checks:{}, tri:{}, term:null, theme:null };
+try{ const raw=localStorage.getItem(KEY); if(raw) S=Object.assign(S,JSON.parse(raw)); }catch(e){}
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }
+
+/* ============================================================
+   BUILD NAV + WEEK VIEWS
+============================================================ */
+const nav=document.getElementById('nav');
+function navBtn(view,idx,label){
+  const b=document.createElement('button'); b.className='nav-item'; b.dataset.view=view;
+  b.innerHTML=`<span class="idx">${idx}</span><span class="lbl">${label}</span><svg class="ring" viewBox="0 0 22 22"><circle cx="11" cy="11" r="9" fill="none" stroke="var(--line)" stroke-width="2.5"/><circle class="rprog" cx="11" cy="11" r="9" fill="none" stroke="var(--good)" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="56.5" stroke-dashoffset="56.5" transform="rotate(-90 11 11)"/></svg>`;
+  b.onclick=()=>{show(view); toggleMenu(false)};
+  return b;
+}
+function navLabel(t){ const d=document.createElement('div'); d.className='nav-group-label'; d.textContent=t; return d; }
+
+nav.appendChild(navLabel('Overview'));
+nav.appendChild(navBtn('dashboard','—','Dashboard'));
+nav.appendChild(navBtn('fundamentals','§0','Foundations'));
+nav.appendChild(navLabel('Weekly units'));
+WEEKS.forEach(w=> nav.appendChild(navBtn('view-'+w.id, w.n==='Finals'?'▣':('W'+w.n), 'Week '+w.n)));
+
+const weekViews=document.getElementById('weekViews');
+WEEKS.forEach(w=>{
+  const sec=document.createElement('section'); sec.className='view hidden'; sec.dataset.view='view-'+w.id;
+  const badges=w.badges.map(b=>`<span class="badge ${b[0]}">${b[1]}</span>`).join('');
+  const prep=w.prep.map(p=>`<li>${p}</li>`).join('');
+  const cold=w.cold.map(c=>`<li>${c}</li>`).join('');
+  const recap=w.recap.map((r,i)=>`<label class="check"><input type="checkbox" data-track="${w.id}-r${i}"><span>${r[0]} <span class="qref">${r[1]}</span></span></label>`).join('');
+  sec.innerHTML=`
+    <div class="eyebrow">Week ${w.n} · ${w.badges[0][1]}</div>
+    <h1>${w.title}</h1>
+    <div class="weekdates" id="wd-${w.id}"></div>
+    <div class="badges">${badges}</div>
+    <p class="lede" style="margin-top:14px">${w.sentence}</p>
+
+    <div class="card prep">
+      <div class="card-head"><span class="ic">☉</span><h3>Sunday prep — read ahead before Monday</h3></div>
+      <ul>${prep}</ul>
+      <h3 style="margin-top:14px">Be able to reproduce, cold</h3>
+      <ul>${cold}</ul>
+    </div>
+
+    <div class="card recap">
+      <div class="card-head"><span class="ic">✓</span><h3>End-of-week recap — self-check vs PS${w.n==='1–2'?'1':(w.n==='9–10'?'8':(w.n==='Finals'?'':w.n))}</h3></div>
+      <p class="tiny">Tick each when you can do it unaided. Aim for a “3” (complete &amp; correct) on every problem.</p>
+      ${recap}
+      <div class="pmeta" style="margin-top:12px"><span>Week ${w.n} recap</span><span id="wp-${w.id}-l">0%</span></div>
+      <div class="pbar"><span id="wp-${w.id}"></span></div>
+    </div>
+
+    <div class="callout"><b>Project track:</b> ${w.project}</div>
+  `;
+  weekViews.appendChild(sec);
+});
+
+/* Foundations tri-state */
+const triFund=document.getElementById('triFund');
+FUND_SELFTEST.forEach((t,i)=>{
+  const row=document.createElement('div'); row.className='trirow';
+  row.innerHTML=`<div class="txt">${t[0]} <span class="ref">${t[1]}</span></div><button class="trichip" data-tri="ft-${i}">—</button>`;
+  triFund.appendChild(row);
+});
+
+/* Deliverables table */
+const delBody=document.getElementById('delBody');
+DELIVERABLES.forEach(d=>{
+  const tr=document.createElement('tr');
+  tr.innerHTML=`<td><input type="checkbox" class="delchk" data-track="del-${d.id}" style="width:18px;height:18px;accent-color:var(--good);cursor:pointer"></td>
+    <td><b>${d.name}</b></td><td class="tiny">${d.what}</td>
+    <td class="due" id="due-${d.id}">Week ${d.wk}</td><td class="cd" id="cd-${d.id}">—</td>`;
+  delBody.appendChild(tr);
+});
+
+/* ============================================================
+   INTERACTIVITY
+============================================================ */
+function restore(){
+  document.querySelectorAll('[data-track]').forEach(el=>{ if(S.checks[el.dataset.track]) el.checked=true; });
+  document.querySelectorAll('[data-tri]').forEach(el=>{ const v=S.tri[el.dataset.tri]; if(v!==undefined){ el.dataset.v=v; el.textContent=triLabel(v);} });
+}
+function triLabel(v){ return v==="1"?"Solid":v==="0.5"?"Shaky":v==="0"?"Lost":"—"; }
+document.addEventListener('change',e=>{
+  const el=e.target; if(el.dataset && el.dataset.track!==undefined){ S.checks[el.dataset.track]=el.checked; save(); refresh(); }
+});
+document.addEventListener('click',e=>{
+  const el=e.target.closest('[data-tri]'); if(!el) return;
+  const cur=el.dataset.v; const next= cur===undefined?"1":cur==="1"?"0.5":cur==="0.5"?"0":undefined;
+  if(next===undefined){ delete el.dataset.v; delete S.tri[el.dataset.tri]; el.textContent="—"; }
+  else { el.dataset.v=next; S.tri[el.dataset.tri]=next; el.textContent=triLabel(next); }
+  save(); refresh();
+});
+
+/* progress computation */
+function weekProgress(id){
+  const els=[...document.querySelectorAll(`[data-track^="${id}-r"]`)];
+  if(!els.length) return {done:0,total:0,pct:0};
+  const done=els.filter(e=>e.checked).length;
+  return {done, total:els.length, pct: Math.round(done/els.length*100)};
+}
+function fundProgress(){
+  const vals=FUND_SELFTEST.map((_,i)=> S.tri['ft-'+i]!==undefined?parseFloat(S.tri['ft-'+i]):0);
+  const sum=vals.reduce((a,b)=>a+b,0);
+  return { pct: Math.round(sum/FUND_SELFTEST.length*100) };
+}
+function overallProgress(){
+  let done=0,total=0;
+  WEEKS.forEach(w=>{ const p=weekProgress(w.id); done+=p.done; total+=p.total; });
+  const f=fundProgress(); // count foundations as ~ one unit worth
+  const ftDone = FUND_SELFTEST.reduce((a,_,i)=> a + (S.tri['ft-'+i]!==undefined?parseFloat(S.tri['ft-'+i]):0),0);
+  done+=ftDone; total+=FUND_SELFTEST.length;
+  const delDone = DELIVERABLES.filter(d=>S.checks['del-'+d.id]).length; // deliverables extra credit toward vibe only
+  return { pct: total? Math.round(done/total*100):0, done: Math.round(done+delDone) };
+}
+
+/* posterior curve — sigma shrinks as pct rises */
+function drawPosterior(pct){
+  const svg=document.getElementById('posterior'); if(!svg) return;
+  const W=460,H=220, p=pct/100;
+  const sigma = 1.15 - 0.82*p;        // wide prior -> narrow posterior
+  const peak = 1/(sigma*Math.sqrt(2*Math.PI));
+  const maxPeak = 1/(0.33*Math.sqrt(2*Math.PI));
+  const pts=[]; const N=120;
+  for(let i=0;i<=N;i++){
+    const x=-3 + 6*i/N;
+    const y=Math.exp(-x*x/(2*sigma*sigma))/(sigma*Math.sqrt(2*Math.PI));
+    const px = 20 + (x+3)/6*(W-40);
+    const py = H-24 - (y/maxPeak)*(H-52);
+    pts.push([px,py]);
+  }
+  let d="M "+pts.map(p=>p[0].toFixed(1)+" "+p[1].toFixed(1)).join(" L ");
+  let fill=d+` L ${W-20} ${H-24} L 20 ${H-24} Z`;
+  const grad = `<defs><linearGradient id="pg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="var(--accent)" stop-opacity="0.28"/><stop offset="100%" stop-color="var(--accent)" stop-opacity="0.02"/></linearGradient></defs>`;
+  const axis=`<line x1="20" y1="${H-24}" x2="${W-20}" y2="${H-24}" stroke="var(--line)" stroke-width="1"/>`;
+  svg.innerHTML=grad+axis+`<path d="${fill}" fill="url(#pg)"/><path d="${d}" fill="none" stroke="var(--accent)" stroke-width="2.4" stroke-linejoin="round"/>`;
+  // mini brand curve echoes progress
+  const bc=document.getElementById('brandCurve');
+  if(bc){ const s=6-3.2*p; bc.setAttribute('d',`M6 30 Q20 ${8+ (1-p)*0} 34 30`); }
+}
+
+/* dates */
+function fmt(d){ return d.toLocaleDateString(undefined,{month:'short',day:'numeric'}); }
+function weekMonday(wk){ if(!S.term) return null; const d=new Date(S.term+'T00:00:00'); d.setDate(d.getDate()+(wk-1)*7); return d; }
+function setTerm(v){ S.term=v||null; save(); refresh(); }
+function currentWeekNum(){ if(!S.term) return null; const start=new Date(S.term+'T00:00:00'); const now=new Date(); const diff=Math.floor((now-start)/(7*864e5)); return diff+1; }
+
+function refreshDates(){
+  const note=document.getElementById('termNote');
+  if(S.term){ document.getElementById('termStart').value=S.term; note.textContent='dates + countdowns live below'; }
+  else note.textContent='no date set — using “Week N” labels';
+  const cw=currentWeekNum();
+  WEEKS.forEach(w=>{
+    const el=document.getElementById('wd-'+w.id); if(!el) return;
+    const mon=weekMonday(w.wk);
+    if(mon){ const fri=new Date(mon); fri.setDate(fri.getDate()+4);
+      const isNow = cw!==null && ( (w.n==='1–2'&&(cw===1||cw===2)) || (w.n==='9–10'&&(cw===9||cw===10)) || (String(w.wk)===String(cw)) || (w.wk===11&&cw>=11) );
+      el.textContent = `${fmt(mon)} – ${fmt(fri)}${isNow?'   ·   this week':''}`;
+      el.className='weekdates'+(isNow?' now':'');
+    } else el.textContent='';
+  });
+  DELIVERABLES.forEach(d=>{
+    const due=document.getElementById('due-'+d.id), cd=document.getElementById('cd-'+d.id);
+    const mon=weekMonday(d.wk);
+    if(mon){ const fri=new Date(mon); fri.setDate(fri.getDate()+ (d.wk===11?11:4));
+      due.textContent=fmt(fri);
+      const done=S.checks['del-'+d.id];
+      const days=Math.ceil((fri-new Date())/864e5);
+      if(done){ cd.textContent='done'; cd.className='cd done'; }
+      else if(days<0){ cd.textContent=`${-days}d overdue`; cd.className='cd over'; }
+      else { cd.textContent=`${days}d left`; cd.className='cd'; }
+    } else { due.textContent='Week '+d.wk; cd.textContent=S.checks['del-'+d.id]?'done':'—'; cd.className='cd'+(S.checks['del-'+d.id]?' done':''); }
+  });
+  // next deliverable stat
+  const pending=DELIVERABLES.filter(d=>!S.checks['del-'+d.id]);
+  const st=document.getElementById('stNextDel'), stl=document.getElementById('stNextDelL');
+  if(pending.length){ const d=pending[0]; const mon=weekMonday(d.wk);
+    if(mon){ const fri=new Date(mon); fri.setDate(fri.getDate()+(d.wk===11?11:4)); const days=Math.ceil((fri-new Date())/864e5);
+      st.textContent = days<0? '!' : days+'d'; stl.textContent = d.name.split('—')[0].trim()+' · '+(days<0?'overdue':'to go');
+    } else { st.textContent='W'+d.wk; stl.textContent=d.name.split('—')[0].trim(); }
+  } else { st.textContent='✓'; stl.textContent='all deliverables checked off'; }
+}
+
+function refresh(){
+  // week rings + bars
+  let unitsStarted=0;
+  WEEKS.forEach(w=>{
+    const p=weekProgress(w.id);
+    const bar=document.getElementById('wp-'+w.id), lab=document.getElementById('wp-'+w.id+'-l');
+    if(bar) bar.style.width=p.pct+'%'; if(lab) lab.textContent=p.pct+'%';
+    if(p.done>0) unitsStarted++;
+    const btn=document.querySelector(`.nav-item[data-view="view-${w.id}"] .rprog`);
+    if(btn){ const c=56.5; btn.style.strokeDashoffset = c - c*p.pct/100; }
+  });
+  // fundamentals
+  const f=fundProgress();
+  const fb=document.getElementById('fundPct'), fl=document.getElementById('fundPctL');
+  if(fb) fb.style.width=f.pct+'%'; if(fl) fl.textContent=f.pct+'%';
+  const fbtn=document.querySelector(`.nav-item[data-view="fundamentals"] .rprog`);
+  if(fbtn){ const c=56.5; fbtn.style.strokeDashoffset=c-c*f.pct/100; }
+  if(f.pct>0) unitsStarted++;
+  // overall
+  const o=overallProgress();
+  document.getElementById('heroPct').textContent=o.pct+'%';
+  document.getElementById('stWeeks').textContent=unitsStarted+'/9';
+  document.getElementById('stItems').textContent=o.done;
+  drawPosterior(o.pct);
+  refreshDates();
+}
+
+/* nav / views */
+function show(view){
+  document.querySelectorAll('.view').forEach(v=>v.classList.toggle('hidden', v.dataset.view!==view));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active', n.dataset.view===view));
+  const active=document.querySelector('.nav-item[data-view="'+view+'"] .lbl');
+  document.getElementById('crumbSec').textContent = active? '· '+active.textContent : '';
+  window.scrollTo({top:0,behavior:'instant'});
+  if(window.MathJax && MathJax.typesetPromise){ MathJax.typesetPromise(); }
+}
+function toggleMenu(open){ document.getElementById('sidebar').classList.toggle('open',open); document.getElementById('scrim').classList.toggle('show',open); }
+function toggleTheme(){ const h=document.documentElement; const dark=h.getAttribute('data-theme')==='dark'; h.setAttribute('data-theme',dark?'light':'dark'); S.theme=dark?'light':'dark'; save(); drawPosterior(overallProgress().pct); }
+function resetProgress(){ if(confirm('Reset all check-offs, ratings, and deliverable ticks? Your term date stays.')){ S.checks={}; S.tri={}; save(); document.querySelectorAll('[data-track]').forEach(e=>e.checked=false); document.querySelectorAll('[data-tri]').forEach(e=>{delete e.dataset.v; e.textContent='—';}); refresh(); } }
+
+/* init */
+if(S.theme==='dark') document.documentElement.setAttribute('data-theme','dark');
+restore();
+refresh();
+show('dashboard');
+</script>
+</body>
+</html>

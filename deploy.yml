@@ -1,0 +1,42 @@
+name: Deploy study console to GitHub Pages
+
+# Runs on every push to your default branch, plus a manual "Run workflow" button.
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+# Permissions the deploy needs — nothing more.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# If you push twice quickly, let the in-progress deploy finish rather than cancelling it.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          # The whole repo root — index.html lives here. Change to a subfolder
+          # (e.g. "./site") if you later move the file.
+          path: .
+
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4
